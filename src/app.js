@@ -139,10 +139,11 @@ function historyView() {
     </section><p class="history-note">分值与事件只反映自述，不能证明因果或诊断疾病。共享设备可能让他人看到笔记；本地存储未加密，清理浏览器数据或更换设备会丢失记录。</p>`;
 }
 function applyTheme(theme) {
-  const value = ['mint', 'yellow', 'purple'].includes(theme) ? theme : 'mint';
+  const preferred = theme === 'purple' ? 'blue' : theme;
+  const value = ['mint', 'yellow', 'blue'].includes(preferred) ? preferred : 'mint';
   document.documentElement.dataset.theme = value;
   document.querySelectorAll('[data-action="theme"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === value)));
-  document.querySelector('meta[name="theme-color"]').content = { mint: '#f5fcf9', yellow: '#fffdf3', purple: '#faf8ff' }[value];
+  document.querySelector('meta[name="theme-color"]').content = { mint: '#f5fcf9', yellow: '#fffdf3', blue: '#f4faff' }[value];
 }
 try { applyTheme(localStorage.getItem('her-space-theme-v1')); } catch { applyTheme('mint'); }
 function inspectCycleDay(row) {
