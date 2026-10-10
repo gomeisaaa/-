@@ -9,8 +9,8 @@
   <meta name="description" content="她的缓冲区：用一小段时间，行动、自查、心情与经期记录。面向成年女性的自我关爱工具。">
   <title>她的缓冲区 · 女孩自我关爱日记</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M12 26 10 9 25 18Q32 14 39 18L54 9 52 26Q59 52 32 55 5 52 12 26Z' fill='%23e8f5ee' stroke='%23397567' stroke-width='3'/%3E%3Cpath d='M22 32v3m20-3v3M29 40q3 5 6 0' stroke='%23397567' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=397ffaa8c08a4e2e">
-  <script type="module" src="src/app.js?v=397ffaa8c08a4e2e"></script>
+  <link rel="stylesheet" href="styles.css?v=b927c75080abe457">
+  <script type="module" src="src/app.js?v=b927c75080abe457"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
@@ -32,7 +32,7 @@
       <header class="topbar"><span>一个属于你的状态空间</span><button class="help-link" data-action="help"><span class="help-dot"></span> 我需要即时帮助 <span aria-hidden="true">↗</span></button></header>
       <section class="theme-settings" aria-label="页面配色选择"><fieldset class="theme-picker"><legend>页面颜色 · 选你喜欢的一种</legend><button type="button" data-action="theme" data-theme="mint" aria-label="薄荷绿" aria-pressed="false">薄荷绿</button><button type="button" data-action="theme" data-theme="yellow" aria-label="鹅黄" aria-pressed="false">鹅黄</button><button type="button" data-action="theme" data-theme="blue" aria-label="晴空蓝" aria-pressed="false">晴空蓝</button></fieldset><p>点击切换，自动记住你的选择</p></section>
       <main id="main" tabindex="-1"></main>
-      <footer><span>自查是了解自己的起点，不是诊断。</span><span>网页版 v2.2.3 · 专业审阅前原型</span></footer>
+      <footer><span>自查是了解自己的起点，不是诊断。</span><span>网页版 v2.3 · 专业审阅前原型</span></footer>
     </div>
   </div>
   <dialog id="help-dialog" aria-labelledby="help-title">
@@ -64,7 +64,7 @@
   </dialog>
   <dialog id="period-dialog" aria-labelledby="period-title">
     <div class="dialog-heading"><span class="eyebrow">YOUR CYCLE</span><button class="icon-button" data-action="close-period" aria-label="关闭经期记录">×</button></div>
-    <h2 id="period-title">记一笔生理期</h2><p>记录实际出血日期，不把点滴出血自动当作新周期。相同开始日期再次保存会更新该条。</p>
+    <h2 id="period-title">记一笔生理期</h2><p>记录实际出血的开始与结束日期。相同开始日期再次保存会更新该条。</p>
     <form id="period-form"><p class="form-error" role="alert" hidden></p><label class="journal-field">开始日期<input name="start" type="date" required></label><label class="journal-field">结束日期（可选）<input name="end" type="date"></label><label class="journal-field">笔记（可选，最多 100 字）<textarea name="note" maxlength="100" rows="2" placeholder="例如：疼痛、出血变化或其他身体感受"></textarea></label><p class="small muted">未填结束日期时只标记开始当天，不猜测出血天数。经期仅保存在本机，不上传。</p><button class="button primary full" type="submit">保存经期记录</button></form>
   </dialog>
   <div id="toast" role="status" aria-live="polite"></div>
