@@ -21,6 +21,9 @@ let journalCache = [];
 let journalError = '';
 let trendRange = 7;
 let showAllJournal = false;
+let recordTab = 'mood';
+let cycleInspection = [];
+const formError = (form, message = '') => { const el = form.querySelector('.form-error'); el.textContent = message; el.hidden = !message; };
 const moodNames = ['非常低落', '偏低', '稍低', '中性', '稍好', '较好', '很好'];
 const excitementNames = ['没有', '轻微', '明显', '强烈'];
 let toastTimer;
@@ -38,16 +41,17 @@ function loadHistory() {
   catch (e) { historyCache = []; storageError = '本机存储暂不可用或记录损坏。自查仍可使用，但暂不能保存。'; }
   try { journalCache = records.readJournal(localStorage); journalError = ''; }
   catch { journalCache = []; journalError = '心情日志暂不可用或已损坏，不会自动覆盖旧记录。'; }
-  try { document.documentElement.dataset.hasPeriods = String(readPeriods(localStorage).length > 0); } catch { document.documentElement.dataset.hasPeriods = 'true'; }
-  document.querySelector('#nav-count').textContent = historyCache.length + journalCache.length;
+  let periodCount = 0;
+  try { periodCount = readPeriods(localStorage).length; document.documentElement.dataset.hasPeriods = String(periodCount > 0); } catch { document.documentElement.dataset.hasPeriods = 'true'; }
+  document.querySelector('#nav-count').textContent = historyCache.length + journalCache.length + periodCount;
 }
-const leafArt = `<svg class="leaf-art" viewBox="0 0 320 290" fill="none" aria-hidden="true"><circle cx="163" cy="142" r="110" stroke="#b8ccaf" stroke-dasharray="3 8"/><circle cx="163" cy="142" r="83" fill="#d4e3c5"/><path d="M169 239C152 186 162 107 203 60" stroke="#54785a" stroke-width="3" stroke-linecap="round"/><path d="M177 180C113 189 97 151 102 121C154 112 180 143 177 180Z" fill="#8fab83"/><path d="M167 146C215 147 248 107 227 81C185 82 166 114 167 146Z" fill="#547c62"/><path d="M178 103C150 100 135 76 145 54C177 57 186 80 178 103Z" fill="#acc59b"/><path d="M178 179L113 130M170 144L218 93M180 100L149 61" stroke="#e7efde" stroke-width="2"/><circle cx="66" cy="93" r="7" fill="#f9fcf4"/><circle cx="253" cy="199" r="9" fill="#f9fcf4"/><path d="M66 189V201M60 195H72M253 49V65M245 57H261" stroke="#648060" stroke-width="2"/><ellipse cx="165" cy="244" rx="60" ry="8" fill="#b4caa6" opacity=".45"/></svg>`;
+const leafArt = `<svg class="leaf-art cat-art" viewBox="0 0 320 290" fill="none" aria-hidden="true"><circle cx="162" cy="143" r="111" class="cat-halo"/><path d="M111 220Q89 184 111 151L119 95 145 113Q163 104 181 113L207 95 213 151Q236 194 211 222Z" class="cat-body"/><path d="M116 140 119 95 145 113M181 113 207 95 211 140" class="cat-outline"/><path d="M145 145v5m35-5v5M155 159q8 12 16 0M117 155l22 4m-22 7 22-1m70-11-23 4m23 8-23-1" class="cat-outline"/><path d="M123 206q-22 18-37-3-10-16 3-27" class="cat-outline"/><path d="M148 204q15-32 30 0" class="cat-outline"/><path d="M153 184c-12-15-32 1-19 14l27 22 27-22c13-13-7-29-19-14l-8 7Z" class="cat-heart"/><path d="M91 86v12m-6-6h12m137 111v14m-7-7h14" class="cat-outline"/><ellipse cx="163" cy="238" rx="65" ry="7" class="cat-shadow"/></svg>`;
 
 function smallThings() {
   let daily;
   try { daily = dailyTasks(localStorage); }
   catch { return '<section class="card warning"><h3>每日小事勾选暂不可读取</h3><p>旧记录不会自动覆盖。自查与心情日志仍可使用。</p><button class="inline-link" data-action="clear-tasks">清除小事勾选记录</button></section>'; }
-  return `<section class="small-things-section"><div class="section-heading"><div><span class="eyebrow">FIVE LITTLE THINGS</span><h2>今天的 5 件小事</h2></div><span>${daily.done} / 5 已完成</span></div><p class="small muted">替代动作同样算完成。勾选仅存本机，少做一点也没关系。</p><div class="tiny-task-list">${daily.tasks.map(t => `<button class="tiny-task ${t.done ? 'done' : ''}" data-action="toggle-task" data-id="${t.id}" aria-pressed="${t.done}"><span class="task-check">${t.done ? '✓' : ''}</span><span class="task-copy"><strong>${t.title}</strong><small>${t.note}</small></span></button>`).join('')}</div>${daily.complete ? `<div class="task-reward"><span class="pill">今天为自己留了一点空间，已经很好。</span><blockquote>“${daily.quote.text}”</blockquote><p>— ${daily.quote.author} · ${daily.quote.source}</p>${daily.quote.original ? `<p class="quote-original">${daily.quote.original}</p>` : ''}</div>` : '<p class="task-footnote">全部完成后，送你一句来自文学作品的话。没有补做、连续打卡或扣分。</p>'}<button class="inline-link task-clear" data-action="clear-tasks">清除勾选记录</button></section>`;
+  return `<section class="small-things-section"><div class="section-heading"><div><span class="eyebrow">FIVE LITTLE THINGS</span><h2>今天的 5 件小事</h2></div><span>${daily.done} / 5 已完成</span></div><progress class="task-progress" max="5" value="${daily.done}" aria-label="今日小事完成 ${daily.done} 项，共 5 项"></progress><p class="small muted">替代动作同样算完成。勾选仅存本机，少做一点也没关系。</p><div class="tiny-task-list">${daily.tasks.map(t => `<button class="tiny-task ${t.done ? 'done' : ''}" data-action="toggle-task" data-id="${t.id}" aria-pressed="${t.done}"><span class="task-check">${t.done ? '✓' : ''}</span><span class="task-copy"><strong>${t.title}</strong><small>${t.note}</small></span></button>`).join('')}</div>${daily.complete ? `<div class="task-reward"><span class="pill">今天为自己留了一点空间，已经很好。</span><blockquote>“${daily.quote.text}”</blockquote><p>— ${daily.quote.author} · ${daily.quote.source}</p>${daily.quote.original ? `<p class="quote-original">${daily.quote.original}</p>` : ''}</div>` : '<p class="task-footnote">全部完成后，送你一句来自文学作品的话。没有补做、连续打卡或扣分。</p>'}<button class="inline-link task-clear" data-action="clear-tasks">清除勾选记录</button></section>`;
 }
 function home() {
   const latest = historyCache[0];
@@ -117,20 +121,23 @@ function trendChart(trend, kind) {
       </svg></article>`;
 }
 function journalCard(r) {
-  return `<article class="journal-entry"><div class="row journal-entry-top"><strong>${date(r.timestamp)} · ${time(r.timestamp)}</strong><button class="icon-button" data-action="delete-journal" data-id="${escape(r.id)}" aria-label="删除 ${escape(date(r.timestamp))} ${escape(time(r.timestamp))} 的心情日志">×</button></div><div class="journal-values"><span>心情 <strong>${r.mood > 0 ? '+' : ''}${r.mood}</strong> · ${moodNames[r.mood + 3]}</span><span>异常兴奋 <strong>${r.excitement}</strong> · ${excitementNames[r.excitement]}</span><span>睡眠 ${r.sleep === null ? '未记录' : `${r.sleep} 小时`}</span></div>${r.eventType !== '无特定事件' ? `<div class="event-summary"><span class="event-dot">◆</span>${escape(r.eventType)} · ${escape(r.emotion)} · 波动 ${r.eventImpact}/3</div>` : r.emotion !== '未选择' ? `<div class="event-summary">主要感受：${escape(r.emotion)}</div>` : ''}${r.note ? `<p class="journal-note">${escape(r.note)}</p>` : ''}${r.excitement >= 2 ? '<p class="small journal-alert">若明显少睡却不困或冲动加重，应尽快就医；普通心情好不等于异常兴奋。</p>' : ''}</article>`;
+  return `<article class="journal-entry"><div class="row journal-entry-top"><strong>${date(r.timestamp)} · ${time(r.timestamp)}</strong><div class="entry-controls"><button class="inline-link" data-action="edit-journal" data-id="${escape(r.id)}" aria-label="修改这条心情日志">修改</button><button class="icon-button" data-action="delete-journal" data-id="${escape(r.id)}" aria-label="删除 ${escape(date(r.timestamp))} ${escape(time(r.timestamp))} 的心情日志">×</button></div></div><div class="journal-values"><span>心情 <strong>${r.mood > 0 ? '+' : ''}${r.mood}</strong> · ${moodNames[r.mood + 3]}</span><span>异常兴奋 <strong>${r.excitement}</strong> · ${excitementNames[r.excitement]}</span><span>睡眠 ${r.sleep === null ? '未记录' : `${r.sleep} 小时`}</span></div>${r.eventType !== '无特定事件' ? `<div class="event-summary"><span class="event-dot">◆</span>${escape(r.eventType)} · ${escape(r.emotion)} · 波动 ${r.eventImpact}/3</div>` : r.emotion !== '未选择' ? `<div class="event-summary">主要感受：${escape(r.emotion)}</div>` : ''}${r.note ? `<p class="journal-note">${escape(r.note)}</p>` : ''}${r.excitement >= 2 ? '<p class="small journal-alert">若明显少睡却不困或冲动加重，应尽快就医；普通心情好不等于异常兴奋。</p>' : ''}</article>`;
 }
 function historyView() {
   const trend = buildTrend(journalCache, trendRange);
   const visibleJournal = showAllJournal ? journalCache : journalCache.slice(0, 7);
   return `<section class="page-heading"><div><span class="eyebrow">YOUR MOMENTS</span><h1>慢慢看见自己的变化。</h1><p class="muted">把心情、精力与发生的事，放在同一段时间里了解。</p></div><div class="history-actions"><button class="button primary" data-action="journal">＋ 记一笔心情</button>${historyCache.length || journalCache.length || storageError || journalError || document.documentElement.dataset.hasPeriods === 'true' ? '<button class="button outline-button small" data-action="clear">清空本机记录</button>' : ''}</div></section>
     <div class="privacy-strip">▣ 仅保存在当前浏览器 · 自查摘要与心情日志各保留最多 90 条 · 不自动上传或同步</div>
+    <div class="record-tabs" role="tablist" aria-label="记录类别">${[['mood','心情与事件'],['cycle','经期对照'],['summary','自查摘要']].map(([id,label])=>`<button role="tab" id="tab-${id}" aria-controls="panel-${id}" aria-selected="${recordTab===id}" tabindex="${recordTab===id?0:-1}" data-action="record-tab" data-tab="${id}">${label}</button>`).join('')}</div>
+    <section id="panel-mood" class="record-pane" role="tabpanel" aria-labelledby="tab-mood" ${recordTab==='mood'?'':'hidden'}>
     <section class="card trend-panel"><div class="section-heading"><div><h2>最近的心情与精力</h2><p class="small muted">图表来自主动填写的心情日志，不从自查评分推算心情。</p></div><div class="range-switch" role="group" aria-label="趋势时间范围">${[7, 14, 30].map(n => `<button data-action="trend-range" data-days="${n}" class="${trendRange === n ? 'active' : ''}" aria-pressed="${trendRange === n}">${n} 天</button>`).join('')}</div></div><div class="trend-grid">${trendChart(trend, 'mood')}${trendChart(trend, 'excitement')}</div><p class="chart-footnote">◆ 表示当天有相关事件。没有记录的日期留空、不连线；单个点不足以说明趋势。高兴与异常兴奋分别记录，图表不能判断躁狂或其他疾病。</p><details class="trend-data"><summary>查看逐日数据与事件关联</summary><div class="table-scroll"><table><caption class="sr-only">最近 ${trendRange} 天的手动日志统计</caption><thead><tr><th>日期</th><th>心情（最后）</th><th>异常兴奋（最高）</th><th>相关事件</th></tr></thead><tbody>${trend.map(d => `<tr><td>${d.key}</td><td>${d.mood === null ? '未记录' : d.mood}</td><td>${d.excitement === null ? '未记录' : d.excitement}</td><td>${d.events.length ? d.events.map(e => `${escape(e.type)} / ${escape(e.emotion)} / 波动${e.impact}`).join('；') : '未记录事件'}</td></tr>`).join('')}</tbody></table></div></details></section>
-    ${cyclePanel()}
     <div class="section-heading history-section-heading"><h2>心情与事件日志 <span class="count-pill">${journalCache.length}</span></h2><span>可补记，不必每天填写</span></div>
     ${journalError ? `<div class="card warning"><p>${journalError}</p></div>` : journalCache.length ? `<div class="journal-list">${visibleJournal.map(journalCard).join('')}</div>${journalCache.length > 7 ? `<button class="button text-button full" data-action="toggle-journal">${showAllJournal ? '收起较早的日志 ↑' : `查看全部 ${journalCache.length} 条日志 ↓`}</button>` : ''}` : `<div class="card journal-empty"><span>❧</span><div><h3>留下一笔，更容易看见变化。</h3><p>记录此刻心情、睡眠或一件影响你的事，不必先完成问卷。</p></div><button class="inline-link" data-action="journal">开始记录 →</button></div>`}
+    </section><section id="panel-cycle" class="record-pane" role="tabpanel" aria-labelledby="tab-cycle" ${recordTab==='cycle'?'':'hidden'}>${cyclePanel()}</section>
+    <section id="panel-summary" class="record-pane" role="tabpanel" aria-labelledby="tab-summary" ${recordTab==='summary'?'':'hidden'}>
     <div class="section-heading history-section-heading"><h2>自查维度摘要 <span class="count-pill">${historyCache.length}</span></h2><a href="#intro" class="inline-link">做一次自查 →</a></div>
     ${storageError ? `<div class="card warning" role="alert"><h3>暂时无法读取本机摘要</h3><p>${storageError}</p></div>` : historyCache.length ? `<div class="history-list">${historyCache.map(r => `<article class="history-card"><div class="history-date"><strong>${date(r.timestamp)}</strong><span>${time(r.timestamp)} · ${r.complete ? '完整自查' : '安全分流'}</span></div><div class="history-content"><span class="level-label level-${r.level}">${levelNames[r.level]}</span><p>${r.domains.length ? r.domains.map(escape).join(' · ') : '此次未报告上述领域的明显变化'}</p><div class="history-scores">${r.scores ? `<span>规则 v${r.scoreVersion || 1}</span>` + r.scores.map(d => `<span>${domains.find(x => x.id === d.id).name} ${d.score === null ? '未完成' : d.score + '分'}</span>`).join('') : '<span>旧版摘要：未记录维度分数</span>'}</div></div><button class="icon-button delete-record" data-action="delete" data-id="${escape(r.id)}" aria-label="删除 ${escape(date(r.timestamp))} ${escape(time(r.timestamp))} 的记录">×</button></article>`).join('')}</div>` : '<div class="card journal-empty"><div><h3>尚未保存自查摘要</h3><p>完成自查后可主动保存维度分数，也可以只体验、不保存。</p></div></div>'}
-    <p class="history-note">分值与事件只反映自述，不能证明因果或诊断疾病。共享设备可能让他人看到笔记；本地存储未加密，清理浏览器数据或更换设备会丢失记录。</p>`;
+    </section><p class="history-note">分值与事件只反映自述，不能证明因果或诊断疾病。共享设备可能让他人看到笔记；本地存储未加密，清理浏览器数据或更换设备会丢失记录。</p>`;
 }
 function applyTheme(theme) {
   const value = ['mint', 'yellow', 'purple'].includes(theme) ? theme : 'mint';
@@ -139,17 +146,23 @@ function applyTheme(theme) {
   document.querySelector('meta[name="theme-color"]').content = { mint: '#f5fcf9', yellow: '#fffdf3', purple: '#faf8ff' }[value];
 }
 try { applyTheme(localStorage.getItem('her-space-theme-v1')); } catch { applyTheme('mint'); }
+function inspectCycleDay(row) {
+  return `${row.key} · 心情 ${row.mood === null ? '未记录' : `${row.mood > 0 ? '+' : ''}${row.mood}`} · ${row.bleeding ? '已记录出血' : '未记录出血'} · ${row.phase}${row.events.length ? ` · 相关事件：${row.events.map(e=>escape(e.type)).join('、')}` : ''}`;
+}
 function cyclePanel() {
   let periods, context;
   try { periods = readPeriods(localStorage); context = readCycleContext(localStorage); }
   catch { return '<section class="card warning"><h2>经期记录暂不可读取</h2><p>不会覆盖旧记录。心情日志仍可使用。</p><button class="inline-link" data-action="clear-periods">清除经期记录</button></section>'; }
   const rows = buildCycleOverlay(periods, buildTrend(journalCache, 30), context);
-  const x = i => 55 + i * 490 / 29;
+  cycleInspection = rows;
+  const compact = matchMedia('(max-width: 600px)').matches;
+  const plotLeft = compact ? 30 : 55, plotRight = compact ? 345 : 545, plotWidth = compact ? 420 : 630;
+  const x = i => plotLeft + i * (plotRight - plotLeft) / 29;
   const yMood = v => 180 - (v + 3) / 6 * 140;
   const yHormone = v => 180 - v * 140;
   const lines = (key, y, cls) => chartSegments(rows.map(r => r[key])).filter(s => s.length > 1).map(s => `<polyline class="${cls}" points="${s.map(p => `${x(p.index)},${y(p.value)}`).join(' ')}"/>`).join('');
   const hasModel = rows.some(r => r.estrogen !== null);
-  return `<section class="card cycle-section"><div class="section-heading"><div><span class="eyebrow">CYCLE & MOOD</span><h2>经期 × 最近 30 天心情</h2></div><button class="button secondary" data-action="period">＋ 记录生理期</button></div><label class="cycle-settings">我的周期背景（只决定是否适用典型示意）<select id="cycle-context">${cycleContexts.map(c => `<option ${c === context ? 'selected' : ''}>${c}</option>`).join('')}</select></label><p class="cycle-disclaimer">实线：你的心情记录（左轴 −3～+3）。虚线：雌激素 / 孕酮的典型相对变化示意（右轴低～高），不是你的实测或预测激素浓度。出血底色来自实际记录。重叠仅帮助观察时间关系，不证明激素造成情绪变化。</p><div class="cycle-legend"><span class="observed-mood">心情 · 实线</span><span class="estrogen">雌激素 · 示意虚线</span><span class="progesterone">孕酮 · 示意点线</span><span>▧ 已记录出血</span><span>◆ 当天有事件</span></div><svg class="cycle-svg" viewBox="0 0 630 240" role="img" aria-label="最近30天心情与周期示意对照；激素曲线不是个人浓度，逐日值见下表">${rows.map((r, i) => r.bleeding ? `<rect class="bleeding" x="${x(i) - 7}" y="35" width="14" height="150"/>` : '').join('')}${[-3, 0, 3].map(v => `<line class="chart-grid" x1="55" x2="545" y1="${yMood(v)}" y2="${yMood(v)}"/><text class="axis-label" x="40" y="${yMood(v)+4}" text-anchor="end">${v}</text>`).join('')}<text class="axis-label" x="18" y="20">心情</text><text class="axis-label" x="554" y="20">相对示意</text>${['高','中','低'].map((v,i)=>`<text class="axis-label" x="559" y="${44+i*70}">${v}</text>`).join('')}${rows.map((r,i)=>r.events.length?`<text class="axis-label" x="${x(i)}" y="${r.mood===null?28:yMood(r.mood)-10}" text-anchor="middle">◆</text>`:'').join('')}${lines('estrogen',yHormone,'hormone-e')}${lines('progesterone',yHormone,'hormone-p')}${lines('mood',yMood,'actual-mood')}${rows.map((r,i)=>r.mood===null?'':`<circle class="trend-point" fill="currentColor" cx="${x(i)}" cy="${yMood(r.mood)}" r="3"/>`).join('')}${[0,14,29].map(i=>`<text class="axis-label" x="${x(i)}" y="215" text-anchor="middle">${rows[i].label}</text>`).join('')}</svg><p class="small muted">${hasModel ? '仅在已记录的两次经期开始之间绘制示意；采用排卵约在下一次月经前 14 天的教学近似，未确认排卵，个体差异可很大。' : '目前不绘制激素示意：需选择“自然周期较规律”，且近 30 天包含至少一个已完成、开始间隔 21–35 天的记录周期。只有一次开始日期时不猜测。'} 不向未来或未完成周期外推；不用于避孕、备孕或 PMDD 诊断。</p><details class="trend-data"><summary>查看逐日记录与阶段示意</summary><div class="table-scroll"><table class="cycle-data"><thead><tr><th>日期</th><th>心情</th><th>出血记录</th><th>阶段（示意）</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.key}</td><td>${r.mood??'未记录'}</td><td>${r.bleeding?'有':'未记录'}</td><td>${r.phase}</td></tr>`).join('')}</tbody></table></div></details><div class="period-list">${periods.slice().reverse().map(p=>`<article class="period-entry"><div class="row"><strong>${p.start} → ${p.end||'结束未记录'}</strong><div><button class="inline-link" data-action="edit-period" data-start="${p.start}">修改</button><button class="icon-button" data-action="delete-period" data-start="${p.start}" aria-label="删除 ${p.start} 经期记录">×</button></div></div>${p.note?`<p>${escape(p.note)}</p>`:''}</article>`).join('') || '<p class="small muted">还没有经期记录。不记录经期也可以使用其他功能。</p>'}</div><p class="small muted">明显经期改变、持续异常出血或疼痛应就医；大量出血伴头晕、晕厥或剧烈腹痛应及时急诊评估。</p><a class="inline-link" href="#about">阅读周期与情绪的文献及局限 →</a><button class="inline-link task-clear" data-action="clear-periods">清除经期记录与背景</button></section>`;
+  return `<section class="card cycle-section"><div class="section-heading"><div><span class="eyebrow">CYCLE & MOOD</span><h2>经期 × 最近 30 天心情</h2></div><button class="button secondary" data-action="period">＋ 记录生理期</button></div><label class="cycle-settings">我的周期背景（只决定是否适用典型示意）<select id="cycle-context">${cycleContexts.map(c => `<option ${c === context ? 'selected' : ''}>${c}</option>`).join('')}</select></label><p class="cycle-disclaimer">实线：你的心情记录（左轴 −3～+3）。虚线：雌激素 / 孕酮的典型相对变化示意（右轴低～高），不是你的实测或预测激素浓度。出血底色来自实际记录。重叠仅帮助观察时间关系，不证明激素造成情绪变化。</p><div class="cycle-legend"><span class="observed-mood">心情 · 实线</span><span class="estrogen">雌激素 · 示意虚线</span><span class="progesterone">孕酮 · 示意点线</span><span>▧ 已记录出血</span><span>◆ 当天有事件</span></div><svg class="cycle-svg" viewBox="0 0 ${plotWidth} 240" role="img" aria-label="最近30天心情与周期示意对照；激素曲线不是个人浓度，逐日值见下表">${rows.map((r, i) => r.bleeding ? `<rect class="bleeding" x="${x(i) - 7}" y="35" width="14" height="150"/>` : '').join('')}${[-3, 0, 3].map(v => `<line class="chart-grid" x1="${plotLeft}" x2="${plotRight}" y1="${yMood(v)}" y2="${yMood(v)}"/><text class="axis-label" x="${plotLeft-12}" y="${yMood(v)+4}" text-anchor="end">${v}</text>`).join('')}<text class="axis-label" x="18" y="20">心情</text><text class="axis-label" x="${plotRight+7}" y="20">相对示意</text>${['高','中','低'].map((v,i)=>`<text class="axis-label" x="${plotRight+14}" y="${44+i*70}">${v}</text>`).join('')}${rows.map((r,i)=>r.events.length?`<text class="axis-label" x="${x(i)}" y="${r.mood===null?28:yMood(r.mood)-10}" text-anchor="middle">◆</text>`:'').join('')}${lines('estrogen',yHormone,'hormone-e')}${lines('progesterone',yHormone,'hormone-p')}${lines('mood',yMood,'actual-mood')}${rows.map((r,i)=>r.mood===null?'':`<circle class="trend-point" fill="currentColor" cx="${x(i)}" cy="${yMood(r.mood)}" r="3"/>`).join('')}${[0,14,29].map(i=>`<text class="axis-label" x="${x(i)}" y="215" text-anchor="middle">${rows[i].label}</text>`).join('')}</svg><div class="cycle-inspector"><label for="cycle-day">滑动查看某一天</label><input id="cycle-day" type="range" min="0" max="29" value="29" step="1"><output id="cycle-day-output" for="cycle-day" aria-live="polite">${inspectCycleDay(rows[29])}</output></div><p class="small muted">${hasModel ? '仅在已记录的两次经期开始之间绘制示意；采用排卵约在下一次月经前 14 天的教学近似，未确认排卵，个体差异可很大。' : '目前不绘制激素示意：需选择“自然周期较规律”，且近 30 天包含至少一个已完成、开始间隔 21–35 天的记录周期。只有一次开始日期时不猜测。'} 不向未来或未完成周期外推；不用于避孕、备孕或 PMDD 诊断。</p><details class="trend-data"><summary>查看逐日记录与阶段示意</summary><div class="table-scroll"><table class="cycle-data"><thead><tr><th>日期</th><th>心情</th><th>出血记录</th><th>阶段（示意）</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.key}</td><td>${r.mood??'未记录'}</td><td>${r.bleeding?'有':'未记录'}</td><td>${r.phase}</td></tr>`).join('')}</tbody></table></div></details><div class="period-list">${periods.slice().reverse().map(p=>`<article class="period-entry"><div class="row"><strong>${p.start} → ${p.end||'结束未记录'}</strong><div><button class="inline-link" data-action="edit-period" data-start="${p.start}">修改</button><button class="icon-button" data-action="delete-period" data-start="${p.start}" aria-label="删除 ${p.start} 经期记录">×</button></div></div>${p.note?`<p>${escape(p.note)}</p>`:''}</article>`).join('') || '<p class="small muted">还没有经期记录。不记录经期也可以使用其他功能。</p>'}</div><p class="small muted">明显经期改变、持续异常出血或疼痛应就医；大量出血伴头晕、晕厥或剧烈腹痛应及时急诊评估。</p><a class="inline-link" href="#about">阅读周期与情绪的文献及局限 →</a><button class="inline-link task-clear" data-action="clear-periods">清除经期记录与背景</button></section>`;
 }
 function bankView() {
   const all = [...gates(), ...domains.flatMap(d=>followups(d.id)), ...sharedQuestions];
@@ -159,7 +172,7 @@ function actionView() {
   return `<section class="compact-heading"><span class="eyebrow">A LITTLE ACTION</span><h1>先做一件很小的事。</h1><p class="muted">身体、感官、音乐、绘画或一句善待自己的话。完成一点，就算一点。</p></section>${smallThings()}<p class="small muted">这是日常自我关爱活动，不是专业艺术治疗、音乐治疗或医疗处方。没有立刻开心也不意味着失败。</p>`;
 }
 function about() {
-  return `<section class="compact-heading"><span class="eyebrow">HOW THIS SPACE WORKS</span><h1>行动、自查、记录，慢慢照顾自己。</h1><p class="muted">面向成年女性的自我关爱工具。不预设每位女性都月经规律或有经期。</p></section><article class="card prose"><h2>四个模块</h2><p>行动：每天 5 件可完成的小事与有出处的文学短句。自查：10 道快速题、条件追问、描述性维度分与必要时的就医建议。记录：心情、异常兴奋、睡眠、重大事件和经期；支持最近一个月心情与周期示意对照。工具说明：完整题库、参考关系、科学依据与隐私边界。</p><h2>量表参考不等于量表施测</h2><p>DSM-5-TR 与 ICD-11 用于核对关注范围。SCL-90、SAS、SDS、HCL-32 / HCL-33、Y-BOCS、PSQI 用于检查题目覆盖思路；这版是原创改写题，不复制整套量表，不输出这些量表的分数或阈值，也不能继承其信效度。正式加入某份量表前应核对中文版本、授权、完整施测及验证要求。</p>${scaleReferences.map(([name,use,boundary])=>`<p><strong>${name}</strong>：${use}。${boundary}</p>`).join('')}<h2>分数意味着什么？</h2><p>每个维度为 0–3 级描述性困扰分：取今日主问题与该维度补充题的最高等级。睡眠类型及持续时间不加分，焦虑纳入恐慌后果，激活纳入冲动后果。整体影响单独报告，不加到所有维度。无跨维度总分，无疾病概率；高分不等于确诊，低分不排除疾病。旧记录为 v1，不能把不同规则版本直接当成同一量表趋势。</p><p>强烈困扰、明显生活影响、持续恶化、异常感知或明显少睡却不困应就医。医生结合诊断、身体状况和病程讨论心理治疗或药物；不根据网页分数自行开始、停用或调整药物。安全风险独立优先处理，本站没有实时监测或救援功能。</p><h2>经期能告诉我们多少？</h2><p>仅凭经期日期不能计算个人雌激素、孕酮的浓度，也不能可靠确认排卵。图中的虚线是典型自然周期的教学示意，采用两个已记录开始日期之间的周期长度与“下次月经前约 14 天”的近似；系数仅用于画形态，不是经过拟合的预测模型。真实个人激素需结合合适时点的检测和医疗解释。</p><p>仅在选择自然周期较规律且有 21–35 天的已完成记录周期时显示；不是对所有正常周期范围的判定。激素避孕、孕期、产后哺乳、围绝经期、周期不规则或背景不确定时不展示。当前周期及未来不预测。出血底色只覆盖已记录日期，结束未填仅标起始日；缺少心情记录处不连接。</p><p>激素变化可能与部分人的情绪有关，但关系有很大个体差异；压力、睡眠、疼痛、重大事件和用药也可能同时影响。对照图展示时间关联，不能证明因果。不能用于避孕、备孕或诊断经前烦躁障碍（PMDD）。若周期性困扰明显，可带至少两个周期的每日症状及影响记录就医；本工具单一心情分不等同完整 DRSP 或 C-PASS。</p><h2>文献与它们支持的范围</h2><p class="small muted">${evidenceAccessNote}</p>${evidence.map(e=>`<div class="source-item"><a href="${e.url}" target="_blank" rel="noopener noreferrer">${e.title} ↗</a><p>${e.supports}</p></div>`).join('')}<div class="source-links"><a href="https://www.psychiatry.org/psychiatrists/practice/dsm" target="_blank" rel="noopener noreferrer">APA · DSM</a><a href="https://icd.who.int/browse/2026-01/mms/en" target="_blank" rel="noopener noreferrer">WHO · ICD-11</a></div><h2>小事的用途</h2><p>绘画、音乐聆听、温和正念和感官活动是容易开始的自我关爱思路，不将它们称为专业艺术疗法或音乐治疗，也不承诺治疗疾病。冥想若加重不适就停止。任务每天 5 件，勾选可撤回，完成后显示有作者和作品来源的短句。没有惩罚、连续打卡或补做。</p><h2>隐私与删除</h2><p>无需账号，记录不上传、不跨设备同步。具体自查答案仅暂存页面内存，刷新清除；主动保存后只留维度摘要。摘要与心情日志各保留 90 条，经期最多 48 条，小事最多 90 天，配色与周期背景另存本机。经期、事件和心情都是敏感信息，本机存储未加密，共享设备可能让别人看到；清理浏览器数据会丢失。记录页支持单条删除，经期单独清除，以及全部记录清空；全部清空不删除配色或每日小事勾选。</p>${bankView()}</article>`;
+  return `<section class="compact-heading"><span class="eyebrow">HOW THIS SPACE WORKS</span><h1>行动、自查、记录，慢慢照顾自己。</h1><p class="muted">面向成年女性的自我关爱工具。不预设每位女性都月经规律或有经期。</p></section><nav class="about-toc" aria-label="工具说明目录"></nav><article class="card prose"><h2>四个模块</h2><p>行动：每天 5 件可完成的小事与有出处的文学短句。自查：10 道快速题、条件追问、描述性维度分与必要时的就医建议。记录：心情、异常兴奋、睡眠、重大事件和经期；支持最近一个月心情与周期示意对照。工具说明：完整题库、参考关系、科学依据与隐私边界。</p><h2>量表参考不等于量表施测</h2><p>DSM-5-TR 与 ICD-11 用于核对关注范围。SCL-90、SAS、SDS、HCL-32 / HCL-33、Y-BOCS、PSQI 用于检查题目覆盖思路；这版是原创改写题，不复制整套量表，不输出这些量表的分数或阈值，也不能继承其信效度。正式加入某份量表前应核对中文版本、授权、完整施测及验证要求。</p>${scaleReferences.map(([name,use,boundary])=>`<p><strong>${name}</strong>：${use}。${boundary}</p>`).join('')}<h2>分数意味着什么？</h2><p>每个维度为 0–3 级描述性困扰分：取今日主问题与该维度补充题的最高等级。睡眠类型及持续时间不加分，焦虑纳入恐慌后果，激活纳入冲动后果。整体影响单独报告，不加到所有维度。无跨维度总分，无疾病概率；高分不等于确诊，低分不排除疾病。旧记录为 v1，不能把不同规则版本直接当成同一量表趋势。</p><p>强烈困扰、明显生活影响、持续恶化、异常感知或明显少睡却不困应就医。医生结合诊断、身体状况和病程讨论心理治疗或药物；不根据网页分数自行开始、停用或调整药物。安全风险独立优先处理，本站没有实时监测或救援功能。</p><h2>经期能告诉我们多少？</h2><p>仅凭经期日期不能计算个人雌激素、孕酮的浓度，也不能可靠确认排卵。图中的虚线是典型自然周期的教学示意，采用两个已记录开始日期之间的周期长度与“下次月经前约 14 天”的近似；系数仅用于画形态，不是经过拟合的预测模型。真实个人激素需结合合适时点的检测和医疗解释。</p><p>仅在选择自然周期较规律且有 21–35 天的已完成记录周期时显示；不是对所有正常周期范围的判定。激素避孕、孕期、产后哺乳、围绝经期、周期不规则或背景不确定时不展示。当前周期及未来不预测。出血底色只覆盖已记录日期，结束未填仅标起始日；缺少心情记录处不连接。</p><p>激素变化可能与部分人的情绪有关，但关系有很大个体差异；压力、睡眠、疼痛、重大事件和用药也可能同时影响。对照图展示时间关联，不能证明因果。不能用于避孕、备孕或诊断经前烦躁障碍（PMDD）。若周期性困扰明显，可带至少两个周期的每日症状及影响记录就医；本工具单一心情分不等同完整 DRSP 或 C-PASS。</p><h2>文献与它们支持的范围</h2><p class="small muted">${evidenceAccessNote}</p>${evidence.map(e=>`<div class="source-item"><a href="${e.url}" target="_blank" rel="noopener noreferrer">${e.title} ↗</a><p>${e.supports}</p></div>`).join('')}<div class="source-links"><a href="https://www.psychiatry.org/psychiatrists/practice/dsm" target="_blank" rel="noopener noreferrer">APA · DSM</a><a href="https://icd.who.int/browse/2026-01/mms/en" target="_blank" rel="noopener noreferrer">WHO · ICD-11</a></div><h2>小事的用途</h2><p>绘画、音乐聆听、温和正念和感官活动是容易开始的自我关爱思路，不将它们称为专业艺术疗法或音乐治疗，也不承诺治疗疾病。冥想若加重不适就停止。任务每天 5 件，勾选可撤回，完成后显示有作者和作品来源的短句。没有惩罚、连续打卡或补做。</p><h2>隐私与删除</h2><p>无需账号，记录不上传、不跨设备同步。具体自查答案仅暂存页面内存，刷新清除；主动保存后只留维度摘要。摘要与心情日志各保留 90 条，经期最多 48 条，小事最多 90 天，配色与周期背景另存本机。经期、事件和心情都是敏感信息，本机存储未加密，共享设备可能让别人看到；清理浏览器数据会丢失。记录页支持单条删除，经期单独清除，以及全部记录清空；全部清空不删除配色或每日小事勾选。</p>${bankView()}</article>`;
 }
 
 function navigate(route) {
@@ -181,6 +194,10 @@ function render(focus = true) {
     if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   main.innerHTML = ({ home, action: actionView, intro, check, result: resultView, history: historyView, about }[route])();
+  if (route === 'about') {
+    const toc = main.querySelector('.about-toc');
+    main.querySelectorAll('.prose h2').forEach((heading, i) => { heading.id = 'about-section-' + i; const b = document.createElement('button'); b.textContent = heading.textContent; b.dataset.action = 'about-section'; b.dataset.target = heading.id; toc.append(b); });
+  }
   lastRoute = route;
   if (focus) { main.focus({ preventScroll: true }); window.scrollTo(0, 0); }
 }
@@ -199,9 +216,9 @@ function advance() {
   if (next(session.answers).type !== 'question') finish();
   else { render(); document.querySelector('#question-title')?.focus({ preventScroll: true }); }
 }
-function openJournal() {
+function openJournal(id = null) {
   const form = document.querySelector('#journal-form');
-  form.reset();
+  form.reset(); form.dataset.entryId = id || ''; formError(form);
   const now = new Date();
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   form.elements.timestamp.value = local;
@@ -210,9 +227,25 @@ function openJournal() {
   document.querySelector('#mood-output').textContent = '0 · 中性';
   document.querySelector('#excitement-output').textContent = '0 · 没有';
   document.querySelector('#excitement-hint').hidden = true;
+  if (id) {
+    try {
+      const entry = records.readJournal(localStorage).find(e => e.id === id);
+      if (!entry) throw new Error('记录已变化');
+      const localTime = new Date(entry.timestamp - new Date(entry.timestamp).getTimezoneOffset() * 60000).toISOString().slice(0,16);
+      form.elements.timestamp.value = localTime;
+      for (const key of ['mood','excitement','sleep','eventType','emotion','eventImpact','note']) form.elements[key].value = entry[key] ?? '';
+      form.elements.eventImpact.disabled = entry.eventType === '无特定事件';
+      document.querySelector('#mood-output').textContent = `${entry.mood > 0 ? '+' : ''}${entry.mood} · ${moodNames[entry.mood + 3]}`;
+      document.querySelector('#excitement-output').textContent = `${entry.excitement} · ${excitementNames[entry.excitement]}`;
+      document.querySelector('#excitement-hint').hidden = entry.excitement < 2;
+    } catch { toast('无法打开这条记录，请刷新后重试。'); return; }
+  }
+  document.querySelector('#journal-title').textContent = id ? '修改这条心情记录' : '记下此刻的心情';
+  form.querySelector('[type="submit"]').textContent = id ? '保存修改' : '保存心情日志';
   document.querySelector('#journal-dialog').showModal();
 }
 document.addEventListener('input', event => {
+  if (event.target.id === 'cycle-day') document.querySelector('#cycle-day-output').innerHTML = inspectCycleDay(cycleInspection[Number(event.target.value)]);
   if (event.target.id === 'mood-input') {
     const value = Number(event.target.value);
     document.querySelector('#mood-output').textContent = `${value > 0 ? '+' : ''}${value} · ${moodNames[value + 3]}`;
@@ -227,27 +260,31 @@ document.addEventListener('submit', event => {
   if (event.target.id === 'period-form') {
     event.preventDefault();
     if (!event.target.reportValidity()) return;
+    formError(event.target);
     const data = new FormData(event.target);
-    try { savePeriod(localStorage, { start: data.get('start'), end: data.get('end') || null, note: data.get('note').trim(), originalStart: event.target.dataset.originalStart || null }); document.querySelector('#period-dialog').close(); render(false); toast('经期记录已保存。'); }
-    catch (e) { toast(e.message); }
+    try { savePeriod(localStorage, { start: data.get('start'), end: data.get('end') || null, note: data.get('note').trim(), originalStart: event.target.dataset.originalStart || null }); document.querySelector('#period-dialog').close(); recordTab = 'cycle'; render(false); toast('经期记录已保存。'); }
+    catch (e) { formError(event.target, e.message); }
     return;
   }
   if (event.target.id !== 'journal-form') return;
   event.preventDefault();
   const form = event.target;
   if (!form.reportValidity()) return;
+  formError(form);
   const data = new FormData(form);
   const timestamp = new Date(data.get('timestamp')).getTime();
-  if (!Number.isFinite(timestamp) || timestamp > Date.now() + 60000) { toast('请填写有效时间，不能记录未来的状态。'); return; }
+  if (!Number.isFinite(timestamp) || timestamp > Date.now() + 60000) { formError(form, '请填写有效时间，不能记录未来的状态。'); return; }
   const sleep = data.get('sleep');
-  const entry = { id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp,
+  const entry = { id: form.dataset.entryId || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp,
     mood: Number(data.get('mood')), excitement: Number(data.get('excitement')), sleep: sleep === '' ? null : Number(sleep),
     eventType: data.get('eventType'), emotion: data.get('emotion'), eventImpact: Number(data.get('eventImpact') || 0), note: data.get('note').trim() };
   try {
+    if (form.dataset.entryId && !records.readJournal(localStorage).some(e=>e.id === form.dataset.entryId)) { formError(form, '这条记录已被删除，未保存修改。'); return; }
     records.saveJournal(localStorage, entry);
+    recordTab = 'mood';
     document.querySelector('#journal-dialog').close();
     render(false); toast('心情日志已保存，趋势图已更新。');
-  } catch { toast('日志保存失败，请检查本机存储权限或旧记录格式。'); }
+  } catch { formError(form, '日志保存失败，请检查本机存储权限或旧记录格式。'); }
 });
 document.addEventListener('change', event => {
   if (event.target.id === 'cycle-context') { try { saveCycleContext(localStorage, event.target.value); render(false); } catch { toast('周期背景未保存，请检查存储。'); } }
@@ -269,12 +306,17 @@ document.addEventListener('click', event => {
   const el = event.target.closest('[data-action]');
   if (!el || el.disabled) return;
   switch (el.dataset.action) {
+    case 'record-tab': recordTab = el.dataset.tab; render(false); main.querySelector(`#tab-${recordTab}`).focus({ preventScroll: true }); break;
+    case 'about-section': document.getElementById(el.dataset.target)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); break;
+    case 'edit-journal': openJournal(el.dataset.id); break;
     case 'theme': applyTheme(el.dataset.theme); try { localStorage.setItem('her-space-theme-v1', el.dataset.theme); } catch { toast('配色已切换，但本机暂不能保存偏好。'); } break;
     case 'period': case 'edit-period': {
-      const form = document.querySelector('#period-form'); form.reset(); form.dataset.originalStart = el.dataset.start || '';
+      const form = document.querySelector('#period-form'); form.reset(); formError(form); form.dataset.originalStart = el.dataset.start || '';
       const now = new Date(); const max = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
       form.elements.start.max = max; form.elements.end.max = max;
       if (el.dataset.start) { try { const p = readPeriods(localStorage).find(p=>p.start===el.dataset.start); form.elements.start.value=p.start; form.elements.end.value=p.end||''; form.elements.note.value=p.note; } catch { toast('记录暂不可读取。'); return; } }
+      document.querySelector('#period-title').textContent = el.dataset.start ? '修改这条经期记录' : '记一笔生理期';
+      form.querySelector('[type="submit"]').textContent = el.dataset.start ? '保存修改' : '保存经期记录';
       document.querySelector('#period-dialog').showModal(); break;
     }
     case 'close-period': document.querySelector('#period-dialog').close(); break;
@@ -332,6 +374,12 @@ document.addEventListener('click', event => {
   }
 });
 window.addEventListener('hashchange', () => render());
-window.addEventListener('storage', () => render(false));
+document.addEventListener('keydown', event => {
+  const tab = event.target.closest('[role="tab"][data-tab]');
+  if (!tab || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+  event.preventDefault(); const ids = ['mood','cycle','summary']; const i = ids.indexOf(tab.dataset.tab);
+  recordTab = ids[event.key==='Home'?0:event.key==='End'?2:(i+(event.key==='ArrowRight'?1:2))%3]; render(false); main.querySelector(`#tab-${recordTab}`).focus({preventScroll:true});
+});
+window.addEventListener('storage', event => { if (event.key === 'her-space-theme-v1') applyTheme(event.newValue); render(false); });
 window.addEventListener('beforeunload', event => { if (session) { event.preventDefault(); event.returnValue = ''; } });
 render();
