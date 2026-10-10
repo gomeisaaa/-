@@ -1,10 +1,10 @@
-import { domains, sharedQuestions } from './questions.js';
-import { next, submit, progress, buildResult } from './assessment.js';
-import * as records from './storage.js';
-import { buildTrend, chartSegments } from './trends.js';
-import { dailyTasks, toggleDailyTask, clearDailyTasks } from './selfcare.js';
+import { domains, sharedQuestions } from './questions.js?v=397ffaa8c08a4e2e';
+import { next, submit, progress, buildResult } from './assessment.js?v=397ffaa8c08a4e2e';
+import * as records from './storage.js?v=397ffaa8c08a4e2e';
+import { buildTrend, chartSegments } from './trends.js?v=397ffaa8c08a4e2e';
+import { dailyTasks, toggleDailyTask, clearDailyTasks } from './selfcare.js?v=397ffaa8c08a4e2e';
 
-import { readPeriods, savePeriod, removePeriod, clearPeriods, readCycleContext, saveCycleContext, cycleContexts, buildCycleOverlay } from './cycle.js';
+import { readPeriods, savePeriod, removePeriod, clearPeriods, readCycleContext, saveCycleContext, cycleContexts, buildCycleOverlay } from './cycle.js?v=397ffaa8c08a4e2e';
 
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#help-dialog');
