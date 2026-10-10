@@ -37,10 +37,11 @@ export function scoreDimensions(a) {
     const detailComplete = answered && (a[d.id] === 0 || followups(d.id).every(q => Number.isInteger(a[q.id])));
     // Ordinal descriptive score, no duration points and no cross-domain total.
     const score = detailComplete ? Math.max(a[d.id], a[d.id + '_pattern'] || 0, d.id === 'activation' ? a.activation_risk || 0 : d.id === 'anxiety' ? a.anxiety_panic || 0 : 0) : null;
+    const detailSummary = detailComplete && a[d.id] > 0 ? followups(d.id).filter(q => !q.id.endsWith('_duration')).map(q => q.options.find(o => o.value === a[q.id])?.label).filter(Boolean).join('；') : '';
     const guide = careGuides[d.id];
-    const reason = !answered ? '本维度尚未回答，不能解释。' : !detailComplete ? '已报告状态变化，但追问因安全分流未完成，暂不评分。' : a[d.id] === 0 ? '主问题未报告相关变化，未进入详细追问；不代表已排除问题。' : `你报告的${guide.focus}${['', '较轻微', '较明显', '较强烈'][score]}。维度分数来自今日表现和补充信息中的最高等级，不是量表分。${d.id === 'sleep' ? '睡眠类型不计分。' : ''}`;
+    const reason = !answered ? '本维度尚未回答，不能解释。' : !detailComplete ? '已报告状态变化，但追问因安全分流未完成，暂不评分。' : a[d.id] === 0 ? '主问题未报告相关变化，未进入详细追问；不代表已排除问题。' : `你报告的${guide.focus}${['', '较轻微', '较明显', '较强烈'][score]}。补充回答：${detailSummary}。维度分数来自今日表现和补充信息中的最高等级，不是量表分。${d.id === 'sleep' ? '睡眠类型不计分。' : ''}`;
     return { id: d.id, name: d.name, score, label: score === null ? '尚未完成' : labels[score], reason,
-      basis: detailComplete ? { today: a[d.id], pattern: a[d.id] > 0 ? a[d.id + '_pattern'] : null, impact: d.id === 'activation' && a[d.id] > 0 ? a.activation_risk : null } : null };
+      basis: detailComplete ? { today: a[d.id], pattern: a[d.id] > 0 ? Math.max(a[d.id + '_pattern'] || 0, d.id === 'anxiety' ? a.anxiety_panic || 0 : d.id === 'activation' ? a.activation_risk || 0 : 0) : null, impact: d.id === 'activation' && a[d.id] > 0 ? a.activation_risk : null } : null };
   });
 }
 export function buildResult(a, now = Date.now()) {
