@@ -1,58 +1,59 @@
-// Original prompts, not a validated scale or a transcription of diagnostic criteria.
+// Original, adaptive prompts. Not licensed scale items or validated scale scores.
 export const frequency = [
-  { value: 0, label: '没有', hint: '过去 24 小时没有出现' },
-  { value: 1, label: '轻微 / 偶尔', hint: '有一点，但基本能照常生活' },
-  { value: 2, label: '明显 / 经常', hint: '较难忽略，影响到一些事情' },
-  { value: 3, label: '强烈 / 持续', hint: '很难应对，日常生活明显受影响' }
-];
-const impact = [
-  { value: 0, label: '没有影响' }, { value: 1, label: '有些困难，仍能完成' },
-  { value: 2, label: '明显影响工作、学习或关系' }, { value: 3, label: '难以完成基本生活或照顾自己' }
-];
-const duration = [
-  { value: 0, label: '只在今天 / 不到 2 天' }, { value: 1, label: '2–6 天' },
-  { value: 2, label: '1–2 周' }, { value: 3, label: '超过 2 周' }
+  { value: 0, label: '没有', hint: '过去 24 小时未出现' },
+  { value: 1, label: '轻微 / 偶尔', hint: '能觉察到，基本能照常生活' },
+  { value: 2, label: '明显 / 经常', hint: '反复出现，较难忽略' },
+  { value: 3, label: '强烈 / 持续', hint: '很难应对或明显影响生活' }
 ];
 export const domains = [
-  { id: 'mood', name: '情绪', icon: '☁', title: '今天，你感到低落、空虚或无望吗？', detail: '近两周，低落是否在一天的大部分时间出现？', note: '短暂低落和持续的情绪困扰需要结合病程与生活影响区分。' },
-  { id: 'interest', name: '兴趣与动力', icon: '✧', title: '今天，你对平时喜欢的事情失去兴趣，或很难开始做事吗？', detail: '近两周，兴趣或愉悦感下降是否在多数日子出现？', note: '兴趣变化可有多种原因，不凭这一项判断抑郁障碍。' },
-  { id: 'anxiety', name: '焦虑与恐慌', icon: '≈', title: '今天，你有难以控制的担忧、紧张，或突发强烈恐惧吗？', detail: '近期，担忧或恐慌是否难以控制，或让你回避某些情境？', note: '担忧与恐慌的时间条件和表现不同，需要进一步了解。' },
-  { id: 'sleep', name: '睡眠', icon: '☾', title: '最近一次睡眠，有入睡困难、频繁醒来，或比平时睡得明显更多吗？', detail: '近期，睡眠变化是否让你白天疲惫或难以正常活动？', note: '睡眠变化也可能与作息、身体状况或药物有关。' },
-  { id: 'activation', name: '精力与冲动', icon: '↗', title: '今天，你比平时异常兴奋或易怒，精力明显增加、思维加速或冲动吗？', detail: '这段时间，你是否睡得明显更少却不困，并有精力增加或冲动行为？', note: '关注不同于平常的变化，单纯心情好不等于躁狂或轻躁狂。', duration: [
-    { value: 0, label: '不到 1 天' }, { value: 1, label: '1–3 天' }, { value: 2, label: '4–6 天' }, { value: 3, label: '7 天或更久' }
-  ] },
-  { id: 'cognition', name: '注意与思维', icon: '◎', title: '今天，你是否难以集中注意、思考明显变慢，或比平时混乱？', detail: '近期，注意或思维变化是否持续出现，且不同于你的平常状态？', note: '突然出现的明显混乱，尤其伴身体不适时，应及时接受医疗评估。' },
-  { id: 'compulsion', name: '反复想法与行为', icon: '⟳', title: '今天，你有不想要却反复出现的想法，或难以停止的重复行为吗？', detail: '近期，这些想法或行为是否很难控制，占用大量时间或让你痛苦？', note: '关注痛苦与生活影响，重复行为本身不能用于诊断。' },
-  { id: 'trauma', name: '创伤相关体验', icon: '❧', title: '今天，是否有与可怕经历相关的闪回、回避、过度警觉，或不真实感？', detail: '近期，这些体验是否持续出现，并使你回避提醒物或难以安定？', note: '无需在这里描述经历细节。创伤与解离体验需要分别评估。' },
-  { id: 'perception', name: '感知与现实判断', icon: '◐', title: '今天，在清醒且非入睡或刚醒时，你有别人未感知到的声音、影像，或强烈的被害感吗？', detail: '这些体验是否让你害怕、难以判断现实，或影响你的行动？', note: '文化背景、睡眠、药物和身体疾病等也可能影响这些体验。' },
-  { id: 'safety', name: '安全状况', icon: '♡', title: '过去 24 小时，你有不想活、自伤，或伤害他人的想法吗？', note: '可以如实回答。相关回答会优先进入安全确认，不与其他题目相加。', options: [
-    { value: 0, label: '没有这些想法' },
-    { value: 1, label: '有不想活的想法，但没有行动想法' },
-    { value: 2, label: '有自伤、自杀或伤害他人的行动想法' },
-    { value: 3, label: '已经行动，或准备马上行动' }
+  { id: 'mood', name: '情绪', icon: '☁', title: '过去 24 小时，你有低落、空虚或无望的感受吗？', note: '只评估情绪方向，兴趣和疲劳另问。' },
+  { id: 'interest', name: '兴趣与动力', icon: '✧', title: '过去 24 小时，即使有机会做平时喜欢的事，你感受到的兴趣或愉悦减少了吗？', note: '区分失去兴趣与单纯没时间、疲劳或不想做任务。' },
+  { id: 'anxiety', name: '焦虑与恐慌', icon: '≈', title: '过去 24 小时，你有难以放下的担忧、紧张或突发强烈恐惧吗？', note: '追问会区分持续担忧和突然恐惧。' },
+  { id: 'sleep', name: '睡眠', icon: '☾', title: '最近一次睡眠与你平常相比，有入睡困难、夜间醒来、早醒或明显睡得更多吗？', note: '睡得少却不困会在精力维度单独辨别，不在这里重复。' },
+  { id: 'activation', name: '精力与冲动', icon: '↗', title: '过去 24 小时，你有不同于平常的兴奋或易怒，同时精力增加、话多、思维加速或冲动吗？', note: '普通开心或做事有效率不等于异常兴奋。' },
+  { id: 'cognition', name: '注意与思维', icon: '◎', title: '过去 24 小时，你在阅读、对话或完成一件事时，比平常更难保持注意吗？', note: '只看注意表现，不重复询问低落或睡眠。突然严重混乱应直接就医。' },
+  { id: 'compulsion', name: '反复想法与行为', icon: '⟳', title: '过去 24 小时，你有不想要却闯入的想法，或为消除不安而难以停止的重复行为吗？', note: '自愿的习惯、整洁偏好和一般担忧不自动算作强迫。' },
+  { id: 'trauma', name: '创伤相关体验', icon: '❧', title: '过去 24 小时，与可怕经历有关的回忆、噩梦或闪回，是否让你像又回到当时？', note: '无需写出经历细节；会补问提醒物带来的反应。' },
+  { id: 'perception', name: '感知与现实判断', icon: '◐', title: '过去 24 小时，在清醒且非入睡或刚醒时，你有别人未感知到的声音、影像或强烈被害感吗？', note: '需要结合文化、身体状况、药物及物质使用评估。' },
+  { id: 'safety', name: '安全状况', icon: '♡', title: '过去 24 小时，你有不想活、自伤或伤害他人的想法吗？', note: '安全题优先呈现，不计入维度分数。', options: [
+    { value: 0, label: '没有这些想法' }, { value: 1, label: '有不想活的想法，但没有行动想法' },
+    { value: 2, label: '有自伤、自杀或伤害他人的行动想法' }, { value: 3, label: '已经行动，或准备马上行动' }
   ] }
 ];
+const choices = labels => labels.map((label, value) => ({ value, label }));
+const detail = (id, domain, title, labels, hint = '') => ({ id, domain, name: domains.find(d => d.id === domain)?.name || '整体背景', kind: 'detail', title, hint, options: choices(labels) });
+export const sharedQuestions = [
+  detail('context_duration', 'context', '这次最困扰你的变化，大约持续了多久？', ['只在今天 / 不到 2 天', '2–6 天', '1–2 周', '超过 2 周'], '全局只问一次；不把答案归给每个维度，也不单凭天数诊断。'),
+  detail('context_impact', 'context', '综合这些变化，日常生活受到多大影响？', ['未影响基本生活', '有些困难，仍能完成', '明显影响工作、学习或关系', '难以照顾自己或完成基本生活'], '全局只问一次，整体影响不分摊为各维度分数。')
+];
 export function gates() {
-  return domains.map((d, index) => ({ id: d.id, domain: d.id, name: d.name, title: d.title, options: d.options || frequency, hint: d.note, kind: 'gate', number: index + 1 }));
+  const ordered = [domains.find(d => d.id === 'safety'), ...domains.filter(d => d.id !== 'safety')];
+  return ordered.map((d, index) => ({ id: d.id, domain: d.id, name: d.name, title: d.title, options: d.options || frequency, hint: d.note, kind: 'gate', number: index + 1 }));
 }
-export function followups(id) {
-  const d = domains.find(item => item.id === id);
-  if (!d) return [];
-  if (id === 'safety') return [
-    { id: 'safety_intent', domain: id, name: '安全确认', kind: 'detail', title: '此刻，你是否有近期行动的打算、准备，或难以控制的冲动？', options: [
-      { value: 0, label: '没有' }, { value: 1, label: '不确定，担心自己可能行动' }, { value: 2, label: '有行动打算、准备或难以控制的冲动' }
-    ] },
-    { id: 'safety_safe', domain: id, name: '安全确认', kind: 'detail', title: '此刻，你能否保持自己和他人的安全，并联系可信任的人陪伴？', options: [
-      { value: 0, label: '能保持安全，并能联系到支持者' }, { value: 1, label: '能保持安全，但暂时联系不到支持者' }, { value: 2, label: '不确定或无法保持安全' }
-    ] }
-  ];
-  return [
-    { id: id + '_pattern', domain: id, name: d.name, kind: 'detail', title: d.detail, hint: '回顾这一段时间，而不仅是今天。', options: frequency.map(o => ({ value: o.value, label: o.label })) },
-    { id: id + '_duration', domain: id, name: d.name, kind: 'detail', title: '这种不同于平常的状态，大约已经持续多久？', hint: '持续时间不会单独用于判断疾病。', options: d.duration || duration },
-    { id: id + '_impact', domain: id, name: d.name, kind: 'detail', title: '这种状态对你的生活造成了多大影响？', options: impact }
-  ];
+export function followups(id, answers = {}) {
+  const bank = {
+    mood: [detail('mood_pattern', id, '这次低落时，你对自己的看法有怎样的变化？', ['没有明显自责或贬低自己', '偶尔自责，但能转移注意', '反复自责或觉得自己没有价值', '强烈自责或无价值感，很难摆脱'], '补充自我评价，不再重复询问是否低落。')],
+    interest: [detail('interest_pattern', id, '试着做一点原本喜欢的事时，你还能体验到愉悦吗？', ['仍能感到和往常相近的愉悦', '开始后能感到一点，较以往减少', '多数时候很少感到愉悦', '几乎任何活动都难以感到愉悦'], '区分启动困难和愉悦减少；没尝试时选最接近自己的情况。')],
+    anxiety: [detail('anxiety_pattern', id, '担忧出现后，你能把注意转回眼前的事吗？', ['可以，通常能放下', '需要一点努力才能放下', '经常无法放下，影响当前活动', '几乎一直被担忧占据'], '记录可控制性，而非再次统计紧张频率。'), detail('anxiety_panic', id, '这次是否有突然出现、几分钟内明显加剧的强烈恐惧？', ['没有', '有一次，缓和后能继续活动', '反复出现，开始担心再次发作', '因害怕再次发作而明显回避或难以外出'], '胸痛、晕厥或严重呼吸困难等新发症状应先排除身体急症。')],
+    sleep: [detail('sleep_pattern', id, '最近一次睡眠后，恢复精神的程度怎么样？', ['醒来后基本恢复', '有些疲惫，但能正常活动', '白天疲惫明显，影响活动', '困倦严重或难以保持清醒'], '补充白天后果，不重复问入睡困难。'), detail('sleep_type', id, '这次最主要的睡眠变化是哪一种？', ['入睡困难', '夜醒或早醒', '睡得更多 / 仍不解乏', '作息推迟、睡眠不足或其他'], '此题仅用于解释，不计分。并非 PSQI 分量表。')],
+    activation: [detail('activation_pattern', id, '这段异常兴奋或易怒期间，是否明显少睡却仍不困？', ['没有，睡少了仍会疲惫', '稍少睡，但仍需要休息', '明显少睡却不困，精力增加', '几乎不睡仍精力很足或难以停下'], '睡眠需求减少区别于失眠，不将普通愉快计入。'), detail('activation_risk', id, '这段时间，消费、驾驶、性行为或其他决定是否比平常更冲动？', ['没有明显变化', '想法增多，但能暂缓', '已有明显冒险行为或旁人提醒', '行为难以控制或已造成严重后果'], '有立即危险时先获得即时帮助。'), detail('activation_duration', id, '这种与平常不同、精力增加的状态连续持续了多久？', ['不到 1 天', '1–3 天', '4–6 天', '7 天或更久'], '精力升高需要自己的病程信息；4 天或 7 天都不是自动诊断。')],
+    cognition: [detail('cognition_pattern', id, '减少干扰、一次做一件事后，注意能恢复多少？', ['基本恢复', '部分恢复，仍易分心', '很难恢复，常需别人提醒', '仍无法维持注意或完成简单事情'], '突然出现明显混乱、意识变化或身体急症请直接就医。')],
+    compulsion: [detail('compulsion_pattern', id, '今天，这些想法或重复行为大约占用了多少时间？', ['几乎不占时间 / 能很快放下', '不到 1 小时', '1–3 小时', '超过 3 小时或几乎占据全天'], '时间是描述性线索，不是 Y-BOCS 分数，也不凭时间确诊。')],
+    trauma: [detail('trauma_pattern', id, '遇到与经历有关的提醒时，你有哪些反应？', ['没有明显回避或警觉', '有些不适，仍能留在当下', '常回避提醒物或持续警戒', '难以安定、明显脱离当下或难以继续活动'], '无需强迫回忆。体验不适可停止自查。')],
+    perception: [detail('perception_pattern', id, '出现这些体验时，你能核对现实并保持安全行动吗？', ['能核对，未影响行动', '有些害怕，但能向可信任的人核对', '难以核对，已影响行动', '被声音指使行动或无法确认安全'], '不把信念内容当作已证实的事实；新发或持续体验应就医评估。')],
+    safety: [detail('safety_intent', id, '此刻，你是否有近期行动的打算、准备或难以控制的冲动？', ['没有', '不确定，担心自己可能行动', '有行动打算、准备或难以控制的冲动']), detail('safety_safe', id, '此刻，你能否保持自己和他人的安全，并联系可信任的人陪伴？', ['能保持安全，并能联系到支持者', '能保持安全，但暂时联系不到支持者', '不确定或无法保持安全'])]
+  };
+  return bank[id] || [];
 }
-
+export const scaleReferences = [
+  ['SCL-90 / SCL-90-R', '广泛症状覆盖与维度区分', '本工具未复制 90 题，也不输出总分或常模分。'],
+  ['SAS（Zung）', '焦虑心理表现、躯体表现与时间窗口', '24 小时原创题不能换算 SAS 标准分。'],
+  ['SDS（Zung）', '低落、愉悦减少及自我评价', '不采用原量表反向计分或抑郁阈值。'],
+  ['HCL-32 / HCL-33', '与平常不同的激活、睡眠需求减少及冒险行为', '回顾性轻躁狂量表不等同于每日状态筛查；不沿用切点。'],
+  ['MDD', '抑郁发作的症状组合、病程和排除条件', 'MDD 通常指重性抑郁障碍，未指定具体量表，不能当作一份问卷计分。'],
+  ['Y-BOCS', '侵入想法、重复行为的时间与干扰', '临床访谈量表需完整施测，不能将本题的时间等级称为 Y-BOCS 得分。'],
+  ['PSQI', '睡眠质量、睡眠类型及日间功能', '原量表回顾一个月；本工具今日睡眠题不是 PSQI 总分。']
+];
 // Practical self-care ideas; not treatment prescriptions or promises of efficacy.
 export const careGuides = {
   mood: { focus: '低落、空虚或无望感', title: '把活动拆成小步', ideas: ['如果身体允许，从 10–15 分钟散步或轻度运动开始，按耐受程度逐渐增加。', '选一件今天能完成的小事，并和可信任的人保持一点联系。'] },

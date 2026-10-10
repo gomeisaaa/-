@@ -6,9 +6,9 @@
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fcf8f7">
-  <meta name="description" content="她的缓冲区：用一小段时间，了解今天的自己。成年人每日精神状态自查原型。">
+  <meta name="description" content="她的缓冲区：用一小段时间，行动、自查、心情与经期记录。面向成年女性的自我关爱工具。">
   <title>她的缓冲区 · 女孩自我关爱日记</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='30' fill='%23245b4b'/%3E%3Cpath d='M25 60Q25 22 63 28Q77 68 25 60Z' fill='%23dce8c4'/%3E%3Cpath d='M28 75L58 40' stroke='%23dce8c4' stroke-width='6'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M12 26 10 9 25 18Q32 14 39 18L54 9 52 26Q59 52 32 55 5 52 12 26Z' fill='%23e8f5ee' stroke='%23397567' stroke-width='3'/%3E%3Cpath d='M22 32v3m20-3v3M29 40q3 5 6 0' stroke='%23397567' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="src/app.js"></script>
 </head>
@@ -16,14 +16,16 @@
   <a class="skip-link" href="#main">跳到主要内容</a>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="brand" href="#home" aria-label="她的缓冲区首页"><span class="brand-icon">✳</span><span>她的缓冲区<small>HER LITTLE SPACE</small></span></a>
+      <a class="brand" href="#home" aria-label="她的缓冲区首页"><span class="brand-icon"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M12 26 10 9 25 18Q32 14 39 18L54 9 52 26Q59 52 32 55 5 52 12 26Z" fill="currentColor" opacity=".16"/><path d="M12 26 10 9 25 18Q32 14 39 18L54 9 52 26Q59 52 32 55 5 52 12 26Z" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/><path d="M22 32v3m20-3v3M29 40q3 5 6 0M10 37l10 2M9 44l11-2m34-5-10 2m11 5-11-2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><span>她的缓冲区<small>HER LITTLE SPACE</small></span></a>
       <div class="nav-label">我的空间</div>
       <nav aria-label="主导航">
-        <a href="#home" data-nav="home"><span aria-hidden="true">◈</span> 今日自查</a>
-        <a href="#history" data-nav="history"><span aria-hidden="true">◷</span> 状态记录 <span class="nav-count" id="nav-count">0</span></a>
-        <a href="#about" data-nav="about"><span aria-hidden="true">☷</span> 关于自查</a>
+        <a href="#action" data-nav="action"><span aria-hidden="true">♡</span> 行动</a>
+        <a href="#home" data-nav="home"><span aria-hidden="true">◈</span> 自查</a>
+        <a href="#history" data-nav="history"><span aria-hidden="true">◷</span> 记录 <span class="nav-count" id="nav-count">0</span></a>
+        <a href="#about" data-nav="about"><span aria-hidden="true">☷</span> 工具说明</a>
       </nav>
       <div class="sidebar-note"><span class="tiny-leaf" aria-hidden="true">❧</span><p>不必每一天都很好。<br>先从看见自己开始。</p><span>给自己一小段安静的时间</span></div>
+      <fieldset class="theme-picker"><legend>选一个今天喜欢的颜色</legend><button type="button" data-action="theme" data-theme="mint" aria-label="薄荷绿" aria-pressed="false">薄荷绿</button><button type="button" data-action="theme" data-theme="yellow" aria-label="鹅黄" aria-pressed="false">鹅黄</button><button type="button" data-action="theme" data-theme="purple" aria-label="莫奈紫" aria-pressed="false">莫奈紫</button></fieldset>
       <div class="local-badge"><span aria-hidden="true">▣</span> 记录仅保存在本机</div>
     </aside>
     <div class="content-shell">
@@ -57,6 +59,11 @@
       <button class="button primary full" type="submit">保存心情日志</button>
       <button class="button text-button full" type="button" data-action="close-journal">暂时不保存</button>
     </form>
+  </dialog>
+  <dialog id="period-dialog" aria-labelledby="period-title">
+    <div class="dialog-heading"><span class="eyebrow">YOUR CYCLE</span><button class="icon-button" data-action="close-period" aria-label="关闭经期记录">×</button></div>
+    <h2 id="period-title">记一笔生理期</h2><p>记录实际出血日期，不把点滴出血自动当作新周期。相同开始日期再次保存会更新该条。</p>
+    <form id="period-form"><label class="journal-field">开始日期<input name="start" type="date" required></label><label class="journal-field">结束日期（可选）<input name="end" type="date"></label><label class="journal-field">笔记（可选，最多 100 字）<textarea name="note" maxlength="100" rows="2" placeholder="例如：疼痛、出血变化或其他身体感受"></textarea></label><p class="small muted">未填结束日期时只标记开始当天，不猜测出血天数。经期仅保存在本机，不上传。</p><button class="button primary full" type="submit">保存经期记录</button></form>
   </dialog>
   <div id="toast" role="status" aria-live="polite"></div>
 </body>

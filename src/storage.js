@@ -17,7 +17,7 @@ export function save(storage, result, id) {
   const records = read(storage);
   const record = { id, timestamp: result.timestamp, level: result.level, complete: result.complete, domains: result.flags.map(f => f.name) };
   if (Array.isArray(result.scores)) {
-    record.scoreVersion = 1;
+    record.scoreVersion = result.scoreVersion || 1;
     record.scores = result.scores.map(({ id, score }) => ({ id, score }));
     if (!validScores(record.scores)) throw new Error('Invalid scores');
   }
