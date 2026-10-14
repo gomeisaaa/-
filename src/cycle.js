@@ -1,4 +1,4 @@
-import { dayKey } from './trends.js?v=b927c75080abe457';
+import { dayKey } from './trends.js?v=7acf88ca4ab72ec3';
 const CYCLE_KEY = 'her-space-periods-v1';
 export function validDay(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;

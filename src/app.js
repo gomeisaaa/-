@@ -1,10 +1,10 @@
-import { domains, sharedQuestions } from './questions.js?v=b927c75080abe457';
-import { next, submit, progress, buildResult } from './assessment.js?v=b927c75080abe457';
-import * as records from './storage.js?v=b927c75080abe457';
-import { buildTrend, chartSegments } from './trends.js?v=b927c75080abe457';
-import { dailyTasks, toggleDailyTask, clearDailyTasks } from './selfcare.js?v=b927c75080abe457';
+import { domains, sharedQuestions } from './questions.js?v=7acf88ca4ab72ec3';
+import { next, submit, progress, buildResult } from './assessment.js?v=7acf88ca4ab72ec3';
+import * as records from './storage.js?v=7acf88ca4ab72ec3';
+import { buildTrend, chartSegments } from './trends.js?v=7acf88ca4ab72ec3';
+import { dailyTasks, toggleDailyTask, clearDailyTasks } from './selfcare.js?v=7acf88ca4ab72ec3';
 
-import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween } from './cycle.js?v=b927c75080abe457';
+import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween } from './cycle.js?v=7acf88ca4ab72ec3';
 
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#help-dialog');
@@ -73,7 +73,7 @@ function check() {
   const p = progress(session.answers);
   const safety = q.domain === 'safety';
   const detail = q.kind === 'detail';
-  return `<section class="check-heading"><div><span class="eyebrow">${detail ? 'A CLOSER LOOK' : 'DAILY CHECK-IN'}</span><h1>${safety ? '先确认你的安全。' : detail ? '我们再多了解一点。' : '一步一步，听见自己。'}</h1></div><button class="inline-link muted" data-action="exit">退出自查 ×</button></section>
+  return `<section class="check-heading"><div><span class="eyebrow">${detail ? 'A CLOSER LOOK' : 'DAILY CHECK-IN'}</span><h1>${safety ? '先确认你的安全。' : detail ? '我们再多了解一点。' : '一步一步，听见自己。'}</h1></div><div class="check-header-actions"><button class="inline-link" data-action="help" aria-label="即时帮助">帮助</button><button class="inline-link muted" data-action="exit" aria-label="退出自查">退出 ×</button></div></section>
     <section class="assessment-layout"><div><div class="progress-label"><span>${detail ? `主问题已完成 ${p.done}/10 · 已完成追问 ${p.detailDone}/${p.detailTotal}` : `主问题 ${q.number} / 10`}</span><span>${q.name}</span></div><progress max="100" value="${p.percent}" aria-label="当前自查完成进度">${p.percent}%</progress><div class="card question-card ${safety ? 'safety-question' : ''}"><div class="question-label"><span class="pill">${detail ? '进一步了解' : '过去 24 小时'}</span><span class="small muted">${detail ? '只为了解你的情况' : '请选择最接近的一项'}</span></div><h2 id="question-title" tabindex="-1">${q.title}</h2>${q.hint ? `<p class="question-hint">${q.hint}</p>` : ''}
       <fieldset class="options" aria-labelledby="question-title"><legend class="sr-only">${q.title}</legend>${q.options.map(o => `<label class="option ${selected === o.value ? 'selected' : ''}"><input type="radio" name="answer" value="${o.value}" ${selected === o.value ? 'checked' : ''}><span class="radio-mark"></span><span class="option-copy"><strong>${o.label}</strong>${o.hint ? `<small>${o.hint}</small>` : ''}</span></label>`).join('')}</fieldset>
       ${safety ? '<div class="safety-note">若你已受伤或可能马上行动，请现在就联系紧急服务。<button class="inline-link" data-action="help">查看求助指引 →</button></div>' : ''}
@@ -170,6 +170,7 @@ function render(focus = true) {
     session = null; selected = null;
   }
   if (route === 'check' && !session || route === 'result' && !result) route = 'home';
+  document.body.dataset.view = route;
   loadHistory();
   document.querySelectorAll('[data-nav]').forEach(a => {
     const active = a.dataset.nav === route || (a.dataset.nav === 'home' && ['intro', 'check', 'result'].includes(route));
@@ -182,7 +183,16 @@ function render(focus = true) {
     main.querySelectorAll('.prose h2').forEach((heading, i) => { heading.id = 'about-section-' + i; const b = document.createElement('button'); b.textContent = heading.textContent; b.dataset.action = 'about-section'; b.dataset.target = heading.id; toc.append(b); });
   }
   lastRoute = route;
-  if (focus) { main.focus({ preventScroll: true }); window.scrollTo(0, 0); }
+  if (focus && route === 'check') {
+    requestAnimationFrame(() => {
+      if (document.body.dataset.view !== 'check') return;
+      const heading = main.querySelector('.check-heading');
+      const stripHeight = document.querySelector('.theme-settings').getBoundingClientRect().height;
+      const top = heading.getBoundingClientRect().top + window.scrollY - stripHeight - 12;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+      document.querySelector('#question-title')?.focus({ preventScroll: true });
+    });
+  } else if (focus) { main.focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: 'instant' }); }
 }
 function finish() {
   result = buildResult(session.answers);
@@ -197,7 +207,7 @@ function advance() {
   session.steps.push({ answers: { ...session.answers }, choice: selected });
   session.answers = submit(session.answers, q.id, selected); selected = null;
   if (next(session.answers).type !== 'question') finish();
-  else { render(); document.querySelector('#question-title')?.focus({ preventScroll: true }); }
+  else render();
 }
 function openJournal(id = null) {
   const form = document.querySelector('#journal-form');
