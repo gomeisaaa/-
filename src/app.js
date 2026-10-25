@@ -1,10 +1,10 @@
-import { domains, sharedQuestions } from './questions.js?v=support26';
-import { next, submit, progress, buildResult } from './assessment.js?v=support26';
-import * as records from './storage.js?v=support26';
-import { buildTrend, chartSegments } from './trends.js?v=support26';
-import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=support26';
+import { domains, sharedQuestions } from './questions.js?v=support27';
+import { next, submit, progress, buildResult } from './assessment.js?v=support27';
+import * as records from './storage.js?v=support27';
+import { buildTrend, chartSegments } from './trends.js?v=support27';
+import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=support27';
 
-import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=support26';
+import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=support27';
 
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#help-dialog');
@@ -45,12 +45,26 @@ function loadHistory() {
 }
 const leafArt = `<svg class="leaf-art cat-art" viewBox="0 0 320 290" fill="none" aria-hidden="true"><circle cx="162" cy="143" r="111" class="cat-halo"/><path d="M111 220Q89 184 111 151L119 95 145 113Q163 104 181 113L207 95 213 151Q236 194 211 222Z" class="cat-body"/><path d="M116 140 119 95 145 113M181 113 207 95 211 140" class="cat-outline"/><path d="M145 145v5m35-5v5M155 159q8 12 16 0M117 155l22 4m-22 7 22-1m70-11-23 4m23 8-23-1" class="cat-outline"/><path d="M123 206q-22 18-37-3-10-16 3-27" class="cat-outline"/><path d="M148 204q15-32 30 0" class="cat-outline"/><path d="M153 184c-12-15-32 1-19 14l27 22 27-22c13-13-7-29-19-14l-8 7Z" class="cat-heart"/><path d="M91 86v12m-6-6h12m137 111v14m-7-7h14" class="cat-outline"/><ellipse cx="163" cy="238" rx="65" ry="7" class="cat-shadow"/></svg>`;
 
+const encouragements = [
+  '你不必一直向前走，停下来时，也有人为你喝彩。',
+  '今天的你，已经值得一份温柔。',
+  '愿你对自己，也像对在意的人一样温柔。',
+  '你值得被喜欢，不需要拿今天的表现来交换。',
+  '生活可以慢慢来，你也可以。'
+];
+let lastEncouragement = -1;
+function showEncouragement() {
+  const next = (lastEncouragement + 1 + Math.floor(Math.random() * (encouragements.length - 1))) % encouragements.length;
+  lastEncouragement = next;
+  document.querySelector('#encouragement-message').textContent = encouragements[next];
+  document.querySelector('#encouragement-dialog').showModal();
+}
 function smallThings() {
   let daily;
   try { daily = dailyTasks(localStorage); }
   catch { return '<section class="card warning"><h3>每日小事勾选暂不可读取</h3><p>旧记录不会自动覆盖。自查与心情日志仍可使用。</p><button class="inline-link" data-action="clear-tasks">清除小事勾选记录</button></section>'; }
-  if (daily.resting) return `<section class="card rest-support"><span class="eyebrow">今天，可以停在这里</span><h2>累了，就先不做。</h2><p>你不需要完成任务来换取休息。今天到这里就好，不必补做，这里没有断签或扣分。</p><blockquote class="task-reward" role="status">今天什么都不做，你也值得被温柔对待。休息不需要理由，你的人生仍值得喝彩。</blockquote><p>如果愿意，可以让自己待在舒服一点的地方；什么都不调整也可以。</p><a class="button primary" href="#home">结束今天的行动</a><button class="button secondary" data-action="task-return">重新看看建议</button></section>`;
-  return `<section class="small-things-section"><div class="section-heading"><div><span class="eyebrow">按今天的精力来</span><h2>今天想试试什么？</h2></div><span>已选 ${daily.selected} / 3 项</span></div><p>下面是五个建议，选择 0–3 项就好。随时跳过、更换或撤销，没有补做、断签或扣分。</p><button class="button secondary full" data-action="task-rest">今天很累，我不想做任何事</button><div class="tiny-task-list">${daily.tasks.map(t => `<article class="tiny-task ${t.done ? 'done' : ''}"><div class="task-copy"><strong>${t.title}</strong><small>${t.note}</small><div class="task-controls"><button class="button secondary" data-action="task-choose" data-id="${t.id}" aria-pressed="${t.selected}">${t.selected ? '跳过 / 取消选择' : '选择这项'}</button>${t.selected ? `<button class="button secondary" data-action="toggle-task" data-id="${t.id}" aria-pressed="${t.done}">${t.done ? '撤销完成' : '完成了'}</button>` : ''}<button class="inline-link" data-action="task-replace" data-id="${t.id}">换一个建议</button></div></div></article>`).join('')}</div><p class="task-reward" role="status">${daily.selected > 0 && daily.done === daily.selected ? '送你一个小小的彩蛋：你按自己的节奏，完成了今天想尝试的事。愿这一点点照顾，陪你走过今天。你的人生值得喝彩。' : daily.done ? '你为自己做了一点事情。可以就停在这里，不必再多做。' : '今天不选择任何行动，也欢迎你来这里歇一会儿。'}</p><button class="inline-link task-clear" data-action="clear-tasks">清除行动记录</button></section>`;
+  if (daily.resting) return `<section class="card rest-support"><span class="eyebrow">今天，可以停在这里</span><h2>累了，就先不做。</h2><p>你不需要完成任务来换取休息。今天到这里就好，不必补做，这里没有断签或扣分。</p><p>如果愿意，可以让自己待在舒服一点的地方；什么都不调整也可以。</p><a class="button primary" href="#home">结束今天的行动</a><button class="button secondary" data-action="task-return">重新看看建议</button></section>`;
+  return `<section class="small-things-section"><div class="section-heading"><div><span class="eyebrow">按今天的精力来</span><h2>今天想试试什么？</h2></div><span>已选 ${daily.selected} / 3 项</span></div><p>下面是五个建议，选择 0–3 项就好。随时跳过、更换或撤销，没有补做、断签或扣分。</p><button class="button secondary full" data-action="task-rest">今天很累，我不想做任何事</button><div class="tiny-task-list">${daily.tasks.map(t => `<article class="tiny-task ${t.done ? 'done' : ''}"><div class="task-copy"><strong>${t.title}</strong><small>${t.note}</small><div class="task-controls"><button class="button secondary" data-action="task-choose" data-id="${t.id}" aria-pressed="${t.selected}">${t.selected ? '跳过 / 取消选择' : '选择这项'}</button>${t.selected ? `<button class="button secondary" data-action="toggle-task" data-id="${t.id}" aria-pressed="${t.done}">${t.done ? '撤销完成' : '完成了'}</button>` : ''}<button class="inline-link" data-action="task-replace" data-id="${t.id}">换一个建议</button></div></div></article>`).join('')}</div><p class="task-reward" role="status">${daily.done ? '你为自己做了一点事情。可以就停在这里，不必再多做。' : '今天不选择任何行动，也欢迎你来这里歇一会儿。'}</p><button class="inline-link task-clear" data-action="clear-tasks">清除行动记录</button></section>`;
 }
 function home() {
   const latest = historyCache[0];
@@ -355,10 +369,13 @@ document.addEventListener('click', event => {
     case 'clear-periods': if (confirm('清除全部经期记录？无法恢复，心情记录不受影响。')) { try { clearPeriods(localStorage); render(false); } catch { toast('清除失败。'); } } break;
     case 'help': dialog.showModal(); break;
     case 'welcome-done': welcomeSeen = true; try { localStorage.setItem('her-space-welcome-v1','seen'); } catch {} navigate('home'); break;
-    case 'task-rest': case 'task-return': case 'task-choose': case 'task-replace':
+    case 'close-encouragement': document.querySelector('#encouragement-dialog').close(); break;
+    case 'task-rest':
+      try { updateDailyTask(localStorage, 'rest'); render(false); showEncouragement(); } catch (e) { toast(e.message); } break;
+    case 'task-return': case 'task-choose': case 'task-replace':
       try { updateDailyTask(localStorage, {'task-rest':'rest','task-return':'return','task-choose':'choose','task-replace':'replace'}[el.dataset.action], el.dataset.id); render(false); } catch (e) { toast(e.message); } break;
     case 'toggle-task':
-      try { updateDailyTask(localStorage, 'done', el.dataset.id); render(false); document.querySelector(`[data-action="toggle-task"][data-id="${el.dataset.id}"]`)?.focus({ preventScroll: true }); }
+      try { const before = dailyTasks(localStorage); const after = updateDailyTask(localStorage, 'done', el.dataset.id); render(false); document.querySelector(`[data-action="toggle-task"][data-id="${el.dataset.id}"]`)?.focus({ preventScroll: true }); if (after.selected > 0 && after.done === after.selected && before.done < after.done) showEncouragement(); }
       catch { render(false); toast('勾选未保存，请检查本机存储或刷新今日任务。'); }
       break;
     case 'clear-tasks':

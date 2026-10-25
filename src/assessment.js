@@ -1,4 +1,4 @@
-import { domains, gates, followups, careGuides, sharedQuestions } from './questions.js?v=support26';
+import { domains, gates, followups, careGuides, sharedQuestions } from './questions.js?v=support27';
 export function emergency(a) {
   return a.safety === 3 || a.safety_intent === 2 || a.safety_safe === 2 || a.perception_pattern === 3 || a.activation_risk === 3;
 }
