@@ -1,10 +1,10 @@
-import { domains, sharedQuestions } from './questions.js?v=7acf88ca4ab72ec3';
-import { next, submit, progress, buildResult } from './assessment.js?v=7acf88ca4ab72ec3';
-import * as records from './storage.js?v=7acf88ca4ab72ec3';
-import { buildTrend, chartSegments } from './trends.js?v=7acf88ca4ab72ec3';
-import { dailyTasks, toggleDailyTask, clearDailyTasks } from './selfcare.js?v=7acf88ca4ab72ec3';
+import { domains, sharedQuestions } from './questions.js?v=support25';
+import { next, submit, progress, buildResult } from './assessment.js?v=support25';
+import * as records from './storage.js?v=support25';
+import { buildTrend, chartSegments } from './trends.js?v=support25';
+import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=support25';
 
-import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween } from './cycle.js?v=7acf88ca4ab72ec3';
+import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=support25';
 
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#help-dialog');
@@ -49,13 +49,14 @@ function smallThings() {
   let daily;
   try { daily = dailyTasks(localStorage); }
   catch { return '<section class="card warning"><h3>每日小事勾选暂不可读取</h3><p>旧记录不会自动覆盖。自查与心情日志仍可使用。</p><button class="inline-link" data-action="clear-tasks">清除小事勾选记录</button></section>'; }
-  return `<section class="small-things-section"><div class="section-heading"><div><span class="eyebrow">FIVE LITTLE THINGS</span><h2>今天的 5 件小事</h2></div><span>${daily.done} / 5 已完成</span></div><progress class="task-progress" max="5" value="${daily.done}" aria-label="今日小事完成 ${daily.done} 项，共 5 项"></progress><p class="small muted">替代动作同样算完成。勾选仅存本机，少做一点也没关系。</p><div class="tiny-task-list">${daily.tasks.map(t => `<button class="tiny-task ${t.done ? 'done' : ''}" data-action="toggle-task" data-id="${t.id}" aria-pressed="${t.done}"><span class="task-check">${t.done ? '✓' : ''}</span><span class="task-copy"><strong>${t.title}</strong><small>${t.note}</small></span></button>`).join('')}</div>${daily.complete ? `<div class="task-reward"><span class="pill">今天为自己留了一点空间，已经很好。</span><blockquote>“${daily.quote.text}”</blockquote><p>— ${daily.quote.author} · ${daily.quote.source}</p>${daily.quote.original ? `<p class="quote-original">${daily.quote.original}</p>` : ''}</div>` : '<p class="task-footnote">全部完成后，送你一句来自文学作品的话。没有补做、连续打卡或扣分。</p>'}<button class="inline-link task-clear" data-action="clear-tasks">清除勾选记录</button></section>`;
+  if (daily.resting) return `<section class="card rest-support"><span class="eyebrow">今天，可以停在这里</span><h2>累了，就先不做。</h2><p>你不需要完成任务来换取休息。今天到这里就好，不必补做，也这里没有断签或扣分。</p><p>如果愿意，可以让自己待在舒服一点的地方；什么都不调整也可以。</p><a class="button primary" href="#home">结束今天的行动</a><button class="button secondary" data-action="task-return">重新看看建议</button></section>`;
+  return `<section class="small-things-section"><div class="section-heading"><div><span class="eyebrow">按今天的精力来</span><h2>今天想试试什么？</h2></div><span>已选 ${daily.selected} / 3 项</span></div><p>下面是五个建议，选择 0–3 项就好。随时跳过、更换或撤销，没有补做、断签或扣分。</p><button class="button secondary full" data-action="task-rest">今天很累，我不想做任何事</button><div class="tiny-task-list">${daily.tasks.map(t => `<article class="tiny-task ${t.done ? 'done' : ''}"><div class="task-copy"><strong>${t.title}</strong><small>${t.note}</small><div class="task-controls"><button class="button secondary" data-action="task-choose" data-id="${t.id}" aria-pressed="${t.selected}">${t.selected ? '跳过 / 取消选择' : '选择这项'}</button>${t.selected ? `<button class="button secondary" data-action="toggle-task" data-id="${t.id}" aria-pressed="${t.done}">${t.done ? '撤销完成' : '完成了'}</button>` : ''}<button class="inline-link" data-action="task-replace" data-id="${t.id}">换一个建议</button></div></div></article>`).join('')}</div><p class="task-reward" role="status">${daily.done ? '你为自己做了一点事情。可以就停在这里，不必再多做。' : '今天不选择任何行动，也欢迎你来这里歇一会儿。'}</p><button class="inline-link task-clear" data-action="clear-tasks">清除行动记录</button></section>`;
 }
 function home() {
   const latest = historyCache[0];
-  return `<section class="page-heading"><div><div class="eyebrow">DAILY CHECK-IN</div><h1>今天，给自己一点时间。</h1><p class="muted">不急着判断对错，先听听身体与情绪的声音。</p></div><div class="date-chip"><span class="status-dot"></span>${date(Date.now())}</div></section>
-    <section class="hero"><div class="hero-copy"><span class="hero-label">每一次觉察，都是照顾自己的开始</span><h2>你今天，<br>感觉怎么样？</h2><p>用 10 个简单问题，了解此刻的状态。<br>如果有需要，我们会再多问一点。</p><button class="button primary" data-action="intro">开始今日自查 <span aria-hidden="true">↗</span></button><div class="hero-meta"><span>◷ 约 2–3 分钟</span><span>◇ 异常时追加追问</span></div></div>${leafArt}<span class="hero-caption">慢一点，也没关系。</span></section>
-    <div class="module-links"><a href="#action">行动 · 今天的 5 件小事 →</a><a href="#history">记录 · 心情与经期 →</a><a href="#about">工具说明 · 使用与记录 →</a></div>
+  return `${reminderEnabled ? '<aside class="card" role="status">想留一笔此刻的心情吗？今天跳过也可以。<button class="inline-link" data-action="journal">记一笔</button><button class="inline-link" data-action="reminder">关闭提醒</button></aside>' : ''}<section class="page-heading"><div><div class="eyebrow">DAILY CHECK-IN</div><h1>今天，给自己一点时间。</h1><p class="muted">不急着判断对错，先听听身体与情绪的声音。</p></div><div class="date-chip"><span class="status-dot"></span>${date(Date.now())}</div></section>
+    <section class="hero"><div class="hero-copy"><span class="hero-label">每一次觉察，都是照顾自己的开始</span><h2>你今天，<br>感觉怎么样？</h2><p>可以选一选心情，或用自查整理此刻状态。<br>如果有需要，我们会再多问一点。</p><button class="button secondary" data-action="journal">快速记心情</button><button class="button primary" data-action="intro">开始今日自查 <span aria-hidden="true">↗</span></button><div class="hero-meta"><span>◷ 约 2–3 分钟</span><span>◇ 按回答补充了解</span></div></div>${leafArt}<span class="hero-caption">慢一点，也没关系。</span></section>
+    <div class="module-links"><a href="#action">行动 · 任选的小行动 →</a><a href="#history">记录 · 心情与经期 →</a><a href="#about">工具说明 · 使用与记录 →</a></div>
     <section class="quick-stats" aria-label="自查概览"><div><span class="stat-icon">☷</span><div><strong>10 个关注领域</strong><p>从情绪、睡眠到安全状况</p></div></div><div><span class="stat-icon">⤳</span><div><strong>按你的回答展开</strong><p>只追问需要进一步了解的部分</p></div></div><div><span class="stat-icon">▣</span><div><strong>由你决定是否保存</strong><p>无账号，不上传自查数据</p></div></div></section>
     <div class="section-heading"><h2>先了解，再开始</h2><span>让自查成为一种温柔的习惯</span></div>
     <section class="info-grid"><article class="card"><span class="card-kicker">01 / 自查方式</span><h3>关注今天，也看见变化</h3><p>主问题回顾过去 24 小时。出现变化时，再了解持续时间与生活影响。无需给自己贴标签。</p><div class="tag-row"><span>每日状态</span><span>条件追问</span><span>行动建议</span></div></article><article class="card"><span class="card-kicker">02 / 使用说明</span><h3>记录留在你的设备里</h3><p>记下心情、事件和经期，慢慢看见自己的变化。记录仅保存在当前浏览器，可修改或删除；自查帮助了解状态，不能代替诊断。</p><a class="inline-link" href="#about">查看使用说明 <span aria-hidden="true">→</span></a></article></section>
@@ -85,7 +86,7 @@ function resultView() {
   const scored = result.scores.filter(d => d.score !== null);
   const safetyConcern = result.flags.some(f => f.id === 'safety');
   return `<section class="compact-heading"><span class="eyebrow">${urgent ? 'SAFETY FIRST' : 'YOUR DIMENSION REPORT'}</span><h1>${urgent ? '现在，先照顾你的安全。' : '看见每个维度，再找到下一步。'}</h1><p class="muted">${date(result.timestamp)} · ${time(result.timestamp)} · ${result.complete ? '自查已完成' : '常规自查因安全提示中止'}</p></section>
-    <section class="result-layout"><div><article class="result-card level-${result.level}"><div class="result-symbol">${urgent ? '♡' : '✳'}</div><span class="pill">${urgent ? '即时安全提醒' : '本次维度报告'}</span><h2>${result.title}</h2><p>${result.description}</p>${urgent ? '<button class="button danger-button" data-action="help">查看即时求助指引 ↗</button>' : ''}</article>
+    <section class="result-layout"><div><article class="result-card level-${result.level}"><div class="result-symbol">${urgent ? '♡' : '✳'}</div><span class="pill">${urgent ? '即时安全提醒' : '本次维度报告'}</span><h2>当前记录概述</h2><h3>${result.title}</h3><p>${result.description}</p><h3>温和解释</h3><p>这些回答只是此刻体验的一部分，不是疾病标签，也不能说明变化的原因。你不需要凭分数评价自己；即使暂时说不清，也可以获得支持。</p>${urgent ? '<button class="button danger-button" data-action="help">查看即时求助指引 ↗</button>' : ''}</article>
       <article class="card score-report"><div class="section-heading"><h3>各维度困扰程度</h3><span>0–3 分 · 越高表示困扰越明显</span></div><p class="score-caveat">描述性自查分数，未经临床验证；不是 DSM / ICD 诊断分或疾病概率，各维度不相加。</p>
         <div class="score-summary"><span><strong>${result.high.length}</strong> 个维度为 2–3 分</span><span><strong>${result.low.length}</strong> 个维度为 0–1 分</span>${scored.length < 9 ? `<span>${9 - scored.length} 个尚未完成</span>` : ''}</div>
         ${result.high.length ? `<p class="dimension-overview">较高维度：${result.high.map(d => `${d.name} ${d.score} 分`).join('、')}。</p>` : ''}
@@ -94,7 +95,7 @@ function resultView() {
         <details class="scoring-rule"><summary>分数如何计算？</summary><p>0＝未报告明显困扰，1＝轻微，2＝明显，3＝强烈。完成追问的维度取“今日表现与该维度补充信息”的最高等级；恐慌和激活的冲动后果纳入对应维度。睡眠类型、症状数量及持续天数不加分。整体生活影响单独报告，不加到每个维度。主问题为 0 时不追问，显示主问题的 0 分；追问未完成则不评分。安全题单独处理。这是产品的描述性规则，尚未经验证，不能代替临床评估。</p></details></article>
       ${result.context && result.context.impact !== null ? `<article class="card context-report"><h3>整体生活影响 · 单独报告</h3><p>${sharedQuestions[1].options[result.context.impact].label}；最困扰变化的病程：${sharedQuestions[0].options[result.context.duration].label}。不把整体影响归因于每个维度。</p></article>` : ''}
       <article class="card ${safetyConcern ? 'safety-report' : ''}"><h3>安全状况 · 独立确认</h3><p class="safety-status">${result.safety.status}</p><p>${result.safety.note}</p>${safetyConcern ? '<button class="inline-link" data-action="help">查看即时求助指引 →</button>' : ''}</article>
-      <article class="card"><h3>${urgent ? '现在优先做这些事' : '可以从这几件事开始'}</h3><ol class="care-list">${result.actions.map(a => `<li>${a}</li>`).join('')}</ol></article>
+      <article class="card"><h3>${urgent ? '现在优先获得安全支持' : '可选下一步'}</h3>${urgent ? '' : '<p>可以选择一个建议，也可以不接受建议，先休息。明显影响生活或持续加重时，请考虑专业支持。</p><a class="button secondary" href="#action">看看行动或休息支持</a>'}<ol class="care-list">${result.actions.map(a => `<li>${a}</li>`).join('')}</ol></article>
       ${result.advice.length ? `<article class="card"><h3>按维度选择改善思路</h3><p class="small muted">选一个最需要照顾的部分开始；这些方法不是处方，也不保证改善。</p><div class="advice-list">${result.advice.map(a => `<section class="advice-item"><span class="pill">${a.name} · ${a.score} 分</span><h4>${a.title}</h4><ul>${a.ideas.map(idea => `<li>${idea}</li>`).join('')}</ul></section>`).join('')}</div></article>` : ''}
       ${result.medical ? `<article class="card medical-card"><span class="pill">严重或持续情况</span><h3>${result.medical.title}</h3><p>${result.medical.description}</p><h4>关于药物治疗</h4><p>${result.medical.medication}</p>${urgent ? '<button class="button danger-button" data-action="help">查看即时帮助 ↗</button>' : ''}</article>` : ''}
     </div><aside><div class="card save-card"><span class="save-icon">▣</span><h3>留一份记录给自己</h3><p>仅保存日期、维度分数与状态摘要，不保存具体答案。最多保留 90 条，可随时删除。</p><button class="button ${saved ? 'secondary' : 'primary'} full" data-action="save" ${saved ? 'disabled' : ''}>${saved ? '已保存在本机 ✓' : '保存本次摘要'}</button><a class="button text-button full" href="#history">查看状态记录 →</a><div class="divider"></div><p class="small muted">默认不保存，也不会上传。本站无法通过记录联系或救援你。</p></div><div class="result-footnote"><strong>分数描述困扰，不用于诊断</strong><p>高分不等于确诊，低分不排除问题。持续时间、生活影响与身体状况仍需结合了解；严重情况应就医评估。</p></div><button class="button secondary full" data-action="home">返回首页</button></aside></section>`;
@@ -113,13 +114,22 @@ function trendChart(trend, kind) {
   return `<article class="trend-card ${mood ? 'mood-chart' : 'excitement-chart'}"><h3>${title}</h3><p>${mood ? '每天最后一条记录 · −3 非常低落到 +3 很好' : '每天最高记录 · 0 没有到 3 强烈'}</p><svg class="trend-svg" viewBox="0 0 ${width} 218" role="img" aria-label="最近 ${trend.length} 天${title}，${values.filter(v => v !== null).length} 天有记录。详细值见下方数据表。">
       ${levels.map(v => `<line x1="${left}" y1="${y(v)}" x2="${right}" y2="${y(v)}" class="chart-grid"/><text x="31" y="${y(v) + 4}" class="axis-label" text-anchor="end">${v > 0 && mood ? '+' : ''}${v}</text>`).join('')}
       ${segments.filter(segment => segment.length > 1).map(segment => `<polyline points="${segment.map(p => `${x(p.index)},${y(p.value)}`).join(' ')}" class="trend-line"/>`).join('')}
-      ${trend.map((d, i) => d[kind] === null ? '' : `<circle cx="${x(i)}" cy="${y(d[kind])}" r="4" class="trend-point"><title>${d.key}：${d[kind]}；${d.count} 条记录</title></circle>${d.events.length ? `<path d="M ${x(i)} 183 l 4 4 l -4 4 l -4 -4 Z" class="event-marker"><title>${d.key} 有 ${d.events.length} 条相关事件记录</title></path>` : ''}`).join('')}
+      ${trend.map((d, i) => d[kind] === null ? '' : `<circle cx="${x(i)}" cy="${y(d[kind])}" r="8" class="trend-point" role="button" tabindex="0" data-action="trend-day" data-day="${d.key}" aria-label="查看 ${d.key} 的记录与事件"><title>${d.key}：${d[kind]}；${d.count} 条记录</title></circle>${d.events.length ? `<path d="M ${x(i)} 183 l 4 4 l -4 4 l -4 -4 Z" class="event-marker"><title>${d.key} 有 ${d.events.length} 条相关事件记录</title></path>` : ''}`).join('')}
       ${ticks.map(i => `<text x="${x(i)}" y="207" text-anchor="middle" class="axis-label">${trend[i].label}</text>`).join('')}
       ${segments.length ? '' : `<text x="310" y="100" text-anchor="middle" class="chart-empty">这段时间还没有记录</text>`}
       </svg></article>`;
 }
 function journalCard(r) {
-  return `<article class="journal-entry"><div class="row journal-entry-top"><strong>${date(r.timestamp)} · ${time(r.timestamp)}</strong><div class="entry-controls"><button class="inline-link" data-action="edit-journal" data-id="${escape(r.id)}" aria-label="修改这条心情日志">修改</button><button class="icon-button" data-action="delete-journal" data-id="${escape(r.id)}" aria-label="删除 ${escape(date(r.timestamp))} ${escape(time(r.timestamp))} 的心情日志">×</button></div></div><div class="journal-values"><span>心情 <strong>${r.mood > 0 ? '+' : ''}${r.mood}</strong> · ${moodNames[r.mood + 3]}</span><span>异常兴奋 <strong>${r.excitement}</strong> · ${excitementNames[r.excitement]}</span><span>睡眠 ${r.sleep === null ? '未记录' : `${r.sleep} 小时`}</span></div>${r.eventType !== '无特定事件' ? `<div class="event-summary"><span class="event-dot">◆</span>${escape(r.eventType)} · ${escape(r.emotion)} · 波动 ${r.eventImpact}/3</div>` : r.emotion !== '未选择' ? `<div class="event-summary">主要感受：${escape(r.emotion)}</div>` : ''}${r.note ? `<p class="journal-note">${escape(r.note)}</p>` : ''}${r.excitement >= 2 ? '<p class="small journal-alert">若明显少睡却不困或冲动加重，应尽快就医；普通心情好不等于异常兴奋。</p>' : ''}</article>`;
+  return `<article id="journal-${escape(r.id)}" class="journal-entry"><div class="row journal-entry-top"><strong>${date(r.timestamp)} · ${time(r.timestamp)}</strong><div class="entry-controls"><button class="inline-link" data-action="edit-journal" data-id="${escape(r.id)}" aria-label="修改这条心情日志">修改</button><button class="icon-button" data-action="delete-journal" data-id="${escape(r.id)}" aria-label="删除 ${escape(date(r.timestamp))} ${escape(time(r.timestamp))} 的心情日志">×</button></div></div><div class="journal-values"><span>心情 <strong>${r.mood > 0 ? '+' : ''}${r.mood}</strong> · ${moodNames[r.mood + 3]}</span><span>异常兴奋 <strong>${r.excitement}</strong> · ${excitementNames[r.excitement]}</span><span>睡眠 ${r.sleep === null ? '未记录' : `${r.sleep} 小时`}</span></div>${r.eventType !== '无特定事件' || r.eventTag ? `<div class="event-summary"><span class="event-dot">◆</span>${escape(r.eventTag || r.eventType)} · ${escape(r.emotion)} · 波动 ${r.eventImpact}/3</div>` : r.emotion !== '未选择' ? `<div class="event-summary">主要感受：${escape(r.emotion)}</div>` : ''}${r.note ? `<p class="journal-note">${escape(r.note)}</p>` : ''}${r.excitement >= 2 ? '<p class="small journal-alert">若明显少睡却不困或冲动加重，应尽快就医；普通心情好不等于异常兴奋。</p>' : ''}</article>`;
+}
+const localDay = timestamp => { const d = new Date(timestamp); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+function monthlySummary() {
+  const month = localDay(Date.now()).slice(0,7);
+  const rows = journalCache.filter(r => localDay(r.timestamp).startsWith(month));
+  const days = new Set(rows.map(r => localDay(r.timestamp))).size;
+  const tags = [...new Set(rows.map(r => r.eventTag || r.eventType).filter(t => t !== '无特定事件'))];
+  const values = rows.map(r => r.mood);
+  return `<section class="card"><h2>${month} · 月度回顾</h2><p>${rows.length ? `已保留 ${rows.length} 条记录，分布在 ${days} 天。心情记录范围 ${Math.min(...values)} 至 ${Math.max(...values)}，反映填写当时的感受。` : '这个月还没有记录，不必补记。'}</p><p>${tags.length ? `自选事件：${tags.map(escape).join('、')}。` : '事件标签可以不填。'}</p><p class="small muted">仅统计本机仍保留的记录，不代表整月状态，也不判断疾病或事件原因。可以记下一件积极小事，也可以什么都不写。</p></section>`;
 }
 function historyView() {
   const trend = buildTrend(journalCache, trendRange);
@@ -128,7 +138,7 @@ function historyView() {
     <div class="privacy-strip">▣ 仅保存在当前浏览器 · 自查摘要与心情日志各保留最多 90 条 · 不自动上传或同步</div>
     <div class="record-tabs" role="tablist" aria-label="记录类别">${[['mood','心情与事件'],['cycle','经期记录'],['summary','自查摘要']].map(([id,label])=>`<button role="tab" id="tab-${id}" aria-controls="panel-${id}" aria-selected="${recordTab===id}" tabindex="${recordTab===id?0:-1}" data-action="record-tab" data-tab="${id}">${label}</button>`).join('')}</div>
     <section id="panel-mood" class="record-pane" role="tabpanel" aria-labelledby="tab-mood" ${recordTab==='mood'?'':'hidden'}>
-    <section class="card trend-panel"><div class="section-heading"><div><h2>最近的心情与精力</h2><p class="small muted">图表来自主动填写的心情日志，不从自查评分推算心情。</p></div><div class="range-switch" role="group" aria-label="趋势时间范围">${[7, 14, 30].map(n => `<button data-action="trend-range" data-days="${n}" class="${trendRange === n ? 'active' : ''}" aria-pressed="${trendRange === n}">${n} 天</button>`).join('')}</div></div><div class="trend-grid">${trendChart(trend, 'mood')}${trendChart(trend, 'excitement')}</div><p class="chart-footnote">◆ 表示当天有相关事件。没有记录的日期留空、不连线；单个点不足以说明趋势。高兴与异常兴奋分别记录，图表不能判断躁狂或其他疾病。</p><details class="trend-data"><summary>查看逐日数据与事件关联</summary><div class="table-scroll"><table><caption class="sr-only">最近 ${trendRange} 天的手动日志统计</caption><thead><tr><th>日期</th><th>心情（最后）</th><th>异常兴奋（最高）</th><th>相关事件</th></tr></thead><tbody>${trend.map(d => `<tr><td>${d.key}</td><td>${d.mood === null ? '未记录' : d.mood}</td><td>${d.excitement === null ? '未记录' : d.excitement}</td><td>${d.events.length ? d.events.map(e => `${escape(e.type)} / ${escape(e.emotion)} / 波动${e.impact}`).join('；') : '未记录事件'}</td></tr>`).join('')}</tbody></table></div></details></section>
+    <section class="card trend-panel"><div class="section-heading"><div><h2>最近的心情与精力</h2><p class="small muted">图表来自主动填写的心情日志，不从自查评分推算心情。</p></div><div class="range-switch" role="group" aria-label="趋势时间范围">${[7, 14, 30].map(n => `<button data-action="trend-range" data-days="${n}" class="${trendRange === n ? 'active' : ''}" aria-pressed="${trendRange === n}">${n} 天</button>`).join('')}</div></div>${monthlySummary()}<div class="trend-grid">${trendChart(trend, 'mood')}${trendChart(trend, 'excitement')}</div><div id="day-detail" tabindex="-1" aria-live="polite"><p class="small muted">点选图上的数据点，查看当天记录与事件。</p></div><p class="chart-footnote">◆ 表示当天有相关事件。没有记录的日期留空、不连线；单个点不足以说明趋势。高兴与异常兴奋分别记录，图表不能判断躁狂或其他疾病。</p><details class="trend-data"><summary>查看逐日数据与事件关联</summary><div class="table-scroll"><table><caption class="sr-only">最近 ${trendRange} 天的手动日志统计</caption><thead><tr><th>日期</th><th>心情（最后）</th><th>异常兴奋（最高）</th><th>相关事件</th></tr></thead><tbody>${trend.map(d => `<tr><td>${d.key}</td><td>${d.mood === null ? '未记录' : d.mood}</td><td>${d.excitement === null ? '未记录' : d.excitement}</td><td>${d.events.length ? d.events.map(e => `${escape(e.type)} / ${escape(e.emotion)} / 波动${e.impact}`).join('；') : '未记录事件'}</td></tr>`).join('')}</tbody></table></div></details></section>
     <div class="section-heading history-section-heading"><h2>心情与事件日志 <span class="count-pill">${journalCache.length}</span></h2><span>可补记，不必每天填写</span></div>
     ${journalError ? `<div class="card warning"><p>${journalError}</p></div>` : journalCache.length ? `<div class="journal-list">${visibleJournal.map(journalCard).join('')}</div>${journalCache.length > 7 ? `<button class="button text-button full" data-action="toggle-journal">${showAllJournal ? '收起较早的日志 ↑' : `查看全部 ${journalCache.length} 条日志 ↓`}</button>` : ''}` : `<div class="card journal-empty"><span>❧</span><div><h3>留下一笔，更容易看见变化。</h3><p>记录此刻心情、睡眠或一件影响你的事，不必先完成问卷。</p></div><button class="inline-link" data-action="journal">开始记录 →</button></div>`}
     </section><section id="panel-cycle" class="record-pane" role="tabpanel" aria-labelledby="tab-cycle" ${recordTab==='cycle'?'':'hidden'}>${cyclePanel()}</section>
@@ -145,18 +155,41 @@ function applyTheme(theme) {
   document.querySelector('meta[name="theme-color"]').content = { mint: '#f5fcf9', yellow: '#fffdf3', blue: '#f4faff' }[value];
 }
 try { applyTheme(localStorage.getItem('her-space-theme-v1')); } catch { applyTheme('mint'); }
+let calendarOffset = 0;
+let predictionEnabled = false;
+let reminderEnabled = false;
+try { predictionEnabled = localStorage.getItem('her-space-prediction-v1') === 'on'; reminderEnabled = localStorage.getItem('her-space-reminder-v1') === 'on'; } catch {}
+function cycleCalendar(periods) {
+  const today = new Date(); const month = new Date(today.getFullYear(), today.getMonth()+calendarOffset, 1);
+  const year = month.getFullYear(), m = month.getMonth();
+  const estimate = predictionEnabled ? estimatePeriod(periods) : null;
+  const cells = Array.from({length: (month.getDay()+6)%7}, () => '<span></span>');
+  for (let n=1; n<=new Date(year,m+1,0).getDate(); n++) {
+    const key = localDay(new Date(year,m,n));
+    const recorded = periods.some(p => key >= p.start && key <= (p.end || p.start));
+    const predicted = estimate && Math.abs(daysBetween(estimate.start,key)) <= 3;
+    cells.push(`<div class="calendar-day ${recorded?'recorded':predicted?'predicted':''}" aria-label="${key}${recorded?' 已记录出血':predicted?' 估算开始日期范围':''}">${n}</div>`);
+  }
+  return `<div class="section-heading"><button class="button secondary" data-action="calendar-prev" aria-label="上个月">←</button><h3>${year} 年 ${m+1} 月</h3><button class="button secondary" data-action="calendar-next" aria-label="下个月">→</button></div><div class="cycle-calendar">${['一','二','三','四','五','六','日'].map(d=>`<strong>${d}</strong>`).join('')}${cells.join('')}</div><p class="small muted">实色：实际出血记录；虚线：估算开始日附近 ±3 天，仅作展示参考，不是置信区间，也不表示出血持续时间。</p><button class="button secondary" data-action="prediction" aria-pressed="${predictionEnabled}">${predictionEnabled?'关闭':'开启'}经期估算</button><p class="small muted">${predictionEnabled ? estimate ? `根据最近 ${estimate.count} 个已记录间隔的平均值（${estimate.average} 天），下次开始日约为 ${estimate.start}。` : '至少需要 3 次开始日期；间隔不规则或超出估算范围时不提供预测。' : '估算默认关闭，可按需要开启。'} 记录缺漏、周期变化、用药等都会使估算不准，实际日期可能在标示范围之外。不用于避孕、排卵判断、疾病或激素推断。</p>`;
+}
 function cyclePanel() {
   let periods;
   try { periods = readPeriods(localStorage); }
   catch { return '<section class="card warning"><h2>经期记录暂不可读取</h2><p>不会覆盖旧记录。心情日志仍可使用。</p><button class="inline-link" data-action="clear-periods">清除经期记录</button></section>'; }
-  return `<section class="card cycle-section"><div class="section-heading"><div><span class="eyebrow">YOUR PERIOD NOTES</span><h2>经期记录</h2></div><button class="button secondary" data-action="period">＋ 记录生理期</button></div><p class="small muted">记下实际开始、结束日期和身体感受，可以补记、修改或删除。</p><div class="period-list">${periods.slice().reverse().map(p=>`<article class="period-entry"><div class="row"><strong>${p.start} → ${p.end||'结束未记录'}</strong><div class="entry-controls"><button class="inline-link" data-action="edit-period" data-start="${p.start}">修改</button><button class="icon-button" data-action="delete-period" data-start="${p.start}" aria-label="删除 ${p.start} 经期记录">×</button></div></div>${p.end?`<p class="small muted">已记录 ${daysBetween(p.start,p.end)+1} 天（含开始与结束日）</p>`:''}${p.note?`<p>${escape(p.note)}</p>`:''}</article>`).join('') || '<div class="period-empty"><p>还没有经期记录。</p><p class="small muted">从实际开始的那一天记起；结束日期可以稍后补上。</p></div>'}</div><p class="small muted">仅记录你填写的信息，不预测下一次经期。明显经期改变、持续异常出血或疼痛应就医。</p>${periods.length?'<button class="inline-link task-clear" data-action="clear-periods">清除全部经期记录</button>':''}</section>`;
+  return `<section class="card cycle-section"><div class="section-heading"><div><span class="eyebrow">YOUR PERIOD NOTES</span><h2>经期记录</h2></div><button class="button secondary" data-action="period">＋ 记录生理期</button></div><p class="small muted">记下实际开始、结束日期和身体感受，可以补记、修改或删除。</p>${cycleCalendar(periods)}<div class="period-list">${periods.slice().reverse().map(p=>`<article class="period-entry"><div class="row"><strong>${p.start} → ${p.end||'结束未记录'}</strong><div class="entry-controls"><button class="inline-link" data-action="edit-period" data-start="${p.start}">修改</button><button class="icon-button" data-action="delete-period" data-start="${p.start}" aria-label="删除 ${p.start} 经期记录">×</button></div></div>${p.end?`<p class="small muted">已记录 ${daysBetween(p.start,p.end)+1} 天（含开始与结束日）</p>`:''}${p.note?`<p>${escape(p.note)}</p>`:''}</article>`).join('') || '<div class="period-empty"><p>还没有经期记录。</p><p class="small muted">从实际开始的那一天记起；结束日期可以稍后补上。</p></div>'}</div><p class="small muted">日历中实际记录与估算分别标示。明显经期改变、持续异常出血或疼痛应就医。</p>${periods.length?'<button class="inline-link task-clear" data-action="clear-periods">清除全部经期记录</button>':''}</section>`;
 }
 function actionView() {
-  return `<section class="compact-heading"><span class="eyebrow">A LITTLE ACTION</span><h1>先做一件很小的事。</h1><p class="muted">身体、感官、音乐、绘画或一句善待自己的话。完成一点，就算一点。</p></section>${smallThings()}<p class="small muted">这是日常自我关爱活动，不是专业艺术治疗、音乐治疗或医疗处方。没有立刻开心也不意味着失败。</p>`;
+  return `<section class="compact-heading"><span class="eyebrow">A LITTLE ACTION</span><h1>按自己的节奏，做或不做。</h1><p class="muted">想试试时选一件，累了就休息。这里没有必须完成的清单。</p></section>${smallThings()}<p class="small muted">这是日常自我关爱活动，不是专业艺术治疗、音乐治疗或医疗处方。没有立刻开心也不意味着失败。</p>`;
 }
+function introductionCopy() {
+  return `<h2>这里适合谁</h2><p>主要面向 18 岁及以上女性，尤其是在学习、工作、人际或身体变化中感到疲惫、想更了解自己的人。无需先有明确困扰，也不需要证明自己“足够难受”。</p><h2>可以怎样支持你</h2><p><strong>行动与休息：</strong>从简单建议中任选 0–3 项，完成后获得一句温和回应；随时跳过、换一项或撤销。今天没有力气，就选择休息，不需要补做。</p><p><strong>轻量记录：</strong>选一选此刻的心情；事件、睡眠和文字笔记都可不填。也可以自愿进入更完整的自查，帮助整理感受和寻求支持时想说的话。</p><p><strong>回顾变化：</strong>查看心情趋势、事件和月度记录概况；经期记录与估算帮助安排生活，不解释激素，也不推断情绪的生理原因。</p><h2>怎么使用，由你决定</h2><p>不要求每天来，不设连续打卡奖励或断签惩罚。各模块可单独使用，随时退出；休息、跳过或不保存都可以。这里提供日常支持，不保证改善，也不能代替诊断、治疗或紧急救援。自查是未经临床验证的原创问题集。</p><h2>你的记录，由你掌握</h2><p>无需账号。心情、经期、行动与主动保存的自查摘要仅存在当前浏览器的 localStorage，不上传、不跨设备同步，且未加密。网站加载时托管服务仍会收到普通页面请求，但应用不会发送记录。共享设备可能暴露记录；清理浏览器数据会丢失记录。自查答案只在页面内存中，退出或刷新清除。</p><p>心情日志与自查摘要各保留最近 90 条，经期最多 48 条，行动保留最近 90 个有记录的日期。记录页可删除单条或清空敏感记录；行动页可清除行动记录。</p><h2>需要更多支持时</h2><p>困扰持续、加重或明显影响生活时，可以联系专业人员。无法保持安全、已经受伤或可能马上伤害自己或他人时，请立即联系当地紧急服务。页面顶部始终有即时帮助入口；本站没有实时监测或人工救援。</p>`;
+}
+function welcome() { return `<section class="compact-heading"><span class="eyebrow">欢迎来到她的缓冲区</span><h1>这里，不需要你再完成一件事。</h1><p>可以记录，可以尝试一点小行动，也可以只是停一会儿。</p></section><article class="card prose">${introductionCopy()}<button class="button primary" data-action="welcome-done">了解了，按我的节奏开始</button><button class="button text-button" data-action="welcome-done">暂时跳过介绍</button></article>`; }
 function about() {
-  return `<section class="compact-heading"><span class="eyebrow">YOUR LITTLE SPACE</span><h1>给自己一点照顾，也留下一点记录。</h1><p class="muted">一个面向成年女性的自我关爱空间。</p></section><nav class="about-toc" aria-label="工具说明目录"></nav><article class="card prose simple-about"><h2>怎样使用</h2><p><strong>行动</strong>：每天 5 件简单的小事，完成后勾选，全部完成会收到一句有出处的文学短句。少做一点也没关系。</p><p><strong>自查</strong>：从 10 道快速题开始，根据回答追加追问，再查看各维度的状态与照顾自己的思路。分数帮助描述困扰，不用于诊断；明显影响生活或持续恶化时建议就医。</p><p><strong>记录</strong>：记下心情、睡眠、重要事件和经期，查看最近的变化。记录可以补记、修改或删除。</p><h2>你的记录，由你掌握</h2><p>无需账号，记录仅保存在当前浏览器，不上传、不跨设备同步。共享设备可能让其他人看到记录；清理浏览器数据会丢失记录。你可以在记录页删除或清空。</p><h2>需要及时就医时</h2><p>严重不适、明显影响生活或持续恶化时，建议就医评估。若此刻无法保持安全，请使用页面上的即时帮助入口，不必等到完成自查。本站没有实时监测或救援服务。</p></article>`;
+  return `<section class="compact-heading"><h1>需要时，回来看看怎么用。</h1><p>所有支持都可以选择，不必把照顾自己变成新的任务。</p></section><nav class="about-toc" aria-label="工具说明目录"></nav><article class="card prose simple-about">${introductionCopy()}<h2>轻提醒</h2><p>仅在打开首页时显示一句提醒，不发送系统通知，不催促补记。可以随时关闭。</p><button class="button secondary" data-action="reminder" aria-pressed="${reminderEnabled}">${reminderEnabled ? '关闭' : '开启'}轻提醒</button></article>`;
 }
+let welcomeSeen = false;
+try { welcomeSeen = localStorage.getItem('her-space-welcome-v1') === 'seen'; } catch {}
 
 function navigate(route) {
   if (location.hash === '#' + route) render();
@@ -164,7 +197,8 @@ function navigate(route) {
 }
 function render(focus = true) {
   let route = location.hash.slice(1) || 'home';
-  if (!['home', 'action', 'intro', 'check', 'result', 'history', 'about'].includes(route)) route = 'home';
+  if (!welcomeSeen) route = 'welcome';
+  if (!['welcome', 'home', 'action', 'intro', 'check', 'result', 'history', 'about'].includes(route)) route = 'home';
   if (lastRoute === 'check' && route !== 'check' && route !== 'result' && session) {
     if (!confirm('退出会清除此次尚未完成的回答，确定退出吗？')) { location.hash = 'check'; return; }
     session = null; selected = null;
@@ -177,7 +211,7 @@ function render(focus = true) {
     a.classList.toggle('active', active);
     if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  main.innerHTML = ({ home, action: actionView, intro, check, result: resultView, history: historyView, about }[route])();
+  main.innerHTML = ({ welcome, home, action: actionView, intro, check, result: resultView, history: historyView, about }[route])();
   if (route === 'about') {
     const toc = main.querySelector('.about-toc');
     main.querySelectorAll('.prose h2').forEach((heading, i) => { heading.id = 'about-section-' + i; const b = document.createElement('button'); b.textContent = heading.textContent; b.dataset.action = 'about-section'; b.dataset.target = heading.id; toc.append(b); });
@@ -211,7 +245,7 @@ function advance() {
 }
 function openJournal(id = null) {
   const form = document.querySelector('#journal-form');
-  form.reset(); form.dataset.entryId = id || ''; formError(form);
+  form.reset(); document.querySelector('#journal-extras').open = false; form.dataset.entryId = id || ''; formError(form);
   const now = new Date();
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   form.elements.timestamp.value = local;
@@ -221,12 +255,13 @@ function openJournal(id = null) {
   document.querySelector('#excitement-output').textContent = '0 · 没有';
   document.querySelector('#excitement-hint').hidden = true;
   if (id) {
+    document.querySelector('#journal-extras').open = true;
     try {
       const entry = records.readJournal(localStorage).find(e => e.id === id);
       if (!entry) throw new Error('记录已变化');
       const localTime = new Date(entry.timestamp - new Date(entry.timestamp).getTimezoneOffset() * 60000).toISOString().slice(0,16);
       form.elements.timestamp.value = localTime;
-      for (const key of ['mood','excitement','sleep','eventType','emotion','eventImpact','note']) form.elements[key].value = entry[key] ?? '';
+      for (const key of ['mood','excitement','sleep','eventType','emotion','eventImpact','note','eventTag']) form.elements[key].value = entry[key] ?? '';
       form.elements.eventImpact.disabled = entry.eventType === '无特定事件';
       document.querySelector('#mood-output').textContent = `${entry.mood > 0 ? '+' : ''}${entry.mood} · ${moodNames[entry.mood + 3]}`;
       document.querySelector('#excitement-output').textContent = `${entry.excitement} · ${excitementNames[entry.excitement]}`;
@@ -269,7 +304,7 @@ document.addEventListener('submit', event => {
   const sleep = data.get('sleep');
   const entry = { id: form.dataset.entryId || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp,
     mood: Number(data.get('mood')), excitement: Number(data.get('excitement')), sleep: sleep === '' ? null : Number(sleep),
-    eventType: data.get('eventType'), emotion: data.get('emotion'), eventImpact: Number(data.get('eventImpact') || 0), note: data.get('note').trim() };
+    eventType: data.get('eventType'), emotion: data.get('emotion'), eventImpact: Number(data.get('eventImpact') || 0), note: data.get('note').trim(), eventTag: data.get('eventTag').trim() };
   try {
     if (form.dataset.entryId && !records.readJournal(localStorage).some(e=>e.id === form.dataset.entryId)) { formError(form, '这条记录已被删除，未保存修改。'); return; }
     records.saveJournal(localStorage, entry);
@@ -297,6 +332,10 @@ document.addEventListener('click', event => {
   const el = event.target.closest('[data-action]');
   if (!el || el.disabled) return;
   switch (el.dataset.action) {
+    case 'calendar-prev': calendarOffset--; render(false); break;
+    case 'calendar-next': calendarOffset++; render(false); break;
+    case 'prediction': predictionEnabled = !predictionEnabled; try { localStorage.setItem('her-space-prediction-v1',predictionEnabled?'on':'off'); } catch {} render(false); break;
+    case 'reminder': reminderEnabled = !reminderEnabled; try { localStorage.setItem('her-space-reminder-v1',reminderEnabled?'on':'off'); } catch {} render(false); break;
     case 'record-tab': recordTab = el.dataset.tab; render(false); main.querySelector(`#tab-${recordTab}`).focus({ preventScroll: true }); break;
     case 'about-section': document.getElementById(el.dataset.target)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); break;
     case 'edit-journal': openJournal(el.dataset.id); break;
@@ -314,18 +353,22 @@ document.addEventListener('click', event => {
     case 'delete-period': if (confirm('删除这条经期记录？图表也会更新。')) { try { removePeriod(localStorage,el.dataset.start); render(false); } catch { toast('删除失败。'); } } break;
     case 'clear-periods': if (confirm('清除全部经期记录？无法恢复，心情记录不受影响。')) { try { clearPeriods(localStorage); render(false); } catch { toast('清除失败。'); } } break;
     case 'help': dialog.showModal(); break;
+    case 'welcome-done': welcomeSeen = true; try { localStorage.setItem('her-space-welcome-v1','seen'); } catch {} navigate('home'); break;
+    case 'task-rest': case 'task-return': case 'task-choose': case 'task-replace':
+      try { updateDailyTask(localStorage, {'task-rest':'rest','task-return':'return','task-choose':'choose','task-replace':'replace'}[el.dataset.action], el.dataset.id); render(false); } catch (e) { toast(e.message); } break;
     case 'toggle-task':
-      try { toggleDailyTask(localStorage, el.dataset.id); render(false); document.querySelector(`[data-action="toggle-task"][data-id="${el.dataset.id}"]`)?.focus({ preventScroll: true }); }
+      try { updateDailyTask(localStorage, 'done', el.dataset.id); render(false); document.querySelector(`[data-action="toggle-task"][data-id="${el.dataset.id}"]`)?.focus({ preventScroll: true }); }
       catch { render(false); toast('勾选未保存，请检查本机存储或刷新今日任务。'); }
       break;
     case 'clear-tasks':
-      if (confirm('清除每日小事勾选？今天仍是同样的 5 件事，自查摘要和心情日志不受影响。')) {
+      if (confirm('清除每日小事勾选？今天仍可自由选择建议，自查摘要和心情日志不受影响。')) {
         try { clearDailyTasks(localStorage); render(false); toast('勾选记录已清除。'); } catch { toast('清除失败，请检查存储权限。'); }
       }
       break;
     case 'close-help': dialog.close(); break;
     case 'journal': openJournal(); break;
     case 'close-journal': document.querySelector('#journal-dialog').close(); break;
+    case 'trend-day': { const entries = journalCache.filter(r => localDay(r.timestamp) === el.dataset.day); const panel = document.querySelector('#day-detail'); panel.innerHTML = `<h3>${escape(el.dataset.day)} 的记录</h3>${entries.map(journalCard).join('')}`; panel.focus(); break; }
     case 'trend-range': trendRange = Number(el.dataset.days); render(false); break;
     case 'toggle-journal': showAllJournal = !showAllJournal; render(false); break;
     case 'delete-journal':
@@ -357,8 +400,8 @@ document.addEventListener('click', event => {
       }
       break;
     case 'clear':
-      if (confirm('清空全部自查摘要、心情事件日志和经期记录？每日小事勾选和配色不受影响。此操作无法恢复。')) {
-        try { records.clear(localStorage); saved = false; records.clearJournal(localStorage); clearPeriods(localStorage); render(); toast('自查摘要、心情日志和经期记录已清空。'); }
+      if (confirm('清空全部自查摘要、心情事件日志和经期记录？行动记录也会清除，配色不受影响。此操作无法恢复。')) {
+        try { records.clear(localStorage); saved = false; records.clearJournal(localStorage); clearPeriods(localStorage); clearDailyTasks(localStorage); render(); toast('自查摘要、心情日志、经期和行动记录已清空。'); }
         catch { render(false); toast('未能全部清空，部分记录可能已删除。请检查浏览器存储权限。'); }
       }
       break;
@@ -366,6 +409,7 @@ document.addEventListener('click', event => {
 });
 window.addEventListener('hashchange', () => render());
 document.addEventListener('keydown', event => {
+  if (event.target.matches('[data-action="trend-day"]') && ['Enter',' '].includes(event.key)) { event.preventDefault(); event.target.dispatchEvent(new MouseEvent('click', {bubbles:true})); return; }
   const tab = event.target.closest('[role="tab"][data-tab]');
   if (!tab || !['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
   event.preventDefault(); const ids = ['mood','cycle','summary']; const i = ids.indexOf(tab.dataset.tab);

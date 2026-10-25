@@ -9,8 +9,8 @@
   <meta name="description" content="她的缓冲区：用一小段时间，行动、自查、心情与经期记录。面向成年女性的自我关爱工具。">
   <title>她的缓冲区 · 女孩自我关爱日记</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M12 26 10 9 25 18Q32 14 39 18L54 9 52 26Q59 52 32 55 5 52 12 26Z' fill='%23e8f5ee' stroke='%23397567' stroke-width='3'/%3E%3Cpath d='M22 32v3m20-3v3M29 40q3 5 6 0' stroke='%23397567' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=7acf88ca4ab72ec3">
-  <script type="module" src="src/app.js?v=7acf88ca4ab72ec3"></script>
+  <link rel="stylesheet" href="styles.css?v=support25">
+  <script type="module" src="src/app.js?v=support25"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
@@ -48,17 +48,17 @@
   <dialog id="journal-dialog" aria-labelledby="journal-title">
     <div class="dialog-heading"><span class="eyebrow">A MOMENT FOR YOU</span><button class="icon-button" data-action="close-journal" aria-label="关闭日志">×</button></div>
     <h2 id="journal-title">记下此刻的心情</h2>
-    <p>心情好与异常兴奋分别记录。仅在点击保存后留在本机，可修改时间补记过去的状态。</p>
+    <p>选一选心情即可保存；补充内容可全部跳过。只有点击保存后才留在本机。</p>
     <form id="journal-form">
       <p class="form-error" role="alert" hidden></p>
       <label class="journal-field">记录时间<input type="datetime-local" name="timestamp" required></label>
       <div class="journal-field"><label for="mood-input">心情方向 <output id="mood-output" for="mood-input">0 · 中性</output></label><input id="mood-input" name="mood" type="range" min="-3" max="3" step="1" value="0"><div class="range-labels"><span>−3 非常低落</span><span>0 中性</span><span>+3 很好</span></div><small>正负表示心情方向，不是健康等级或诊断分。</small></div>
       <div class="journal-field"><label for="excitement-input">异常兴奋 / 易怒程度 <output id="excitement-output" for="excitement-input">0 · 没有</output></label><input id="excitement-input" name="excitement" type="range" min="0" max="3" step="1" value="0"><div class="range-labels"><span>0 没有</span><span>1 轻微</span><span>2 明显</span><span>3 强烈</span></div><small>指不同于平常的精力增加、思维加速或冲动，不是普通开心。</small><p id="excitement-hint" class="journal-medical-hint" hidden>如果同时明显少睡却不困、行为失控或冲动加重，应尽快就医。不要仅靠运动或冥想处理。</p></div>
-      <label class="journal-field">最近一次睡眠时长（可选，小时）<input name="sleep" type="number" min="0" max="24" step="0.5" inputmode="decimal" placeholder="例如 7.5；未填表示未记录"></label>
-      <div class="journal-form-grid"><label class="journal-field">相关事件<select name="eventType"><option>无特定事件</option><option>工作 / 学业</option><option>人际 / 家庭</option><option>健康 / 身体</option><option>睡眠 / 作息</option><option>其他事件</option></select></label><label class="journal-field">主要感受<select name="emotion"><option>未选择</option><option>开心</option><option>平静</option><option>难过</option><option>焦虑</option><option>愤怒</option><option>混合感受</option></select></label></div>
-      <label class="journal-field">与事件相关的情绪波动<select name="eventImpact" disabled><option value="0">0 · 未报告波动</option><option value="1">1 · 轻微波动</option><option value="2">2 · 明显波动</option><option value="3">3 · 强烈波动</option></select><small>这是你感受到的关联，不代表已经证明事件是原因。</small></label>
+      <details id="journal-extras"><summary>补充事件、睡眠或一句笔记（可选）</summary><label class="journal-field">最近一次睡眠时长（可选，小时）<input name="sleep" type="number" min="0" max="24" step="0.5" inputmode="decimal" placeholder="例如 7.5；未填表示未记录"></label>
+      <div class="journal-form-grid"><label class="journal-field">相关事件<select name="eventType"><option>无特定事件</option><option>组会</option><option>实验</option><option>工作</option><option>人际</option><option>休息</option><option>积极小事</option><option>工作 / 学业</option><option>人际 / 家庭</option><option>健康 / 身体</option><option>睡眠 / 作息</option><option>其他事件</option></select></label><label class="journal-field">主要感受<select name="emotion"><option>未选择</option><option>开心</option><option>平静</option><option>难过</option><option>焦虑</option><option>愤怒</option><option>混合感受</option></select></label></div>
+      <label class="journal-field">自定义事件标签（可选，最多 30 字）<input name="eventTag" maxlength="30" placeholder="例如：完成报告、和朋友散步"></label><label class="journal-field">与事件相关的情绪波动<select name="eventImpact" disabled><option value="0">0 · 未报告波动</option><option value="1">1 · 轻微波动</option><option value="2">2 · 明显波动</option><option value="3">3 · 强烈波动</option></select><small>这是你感受到的关联，不代表已经证明事件是原因。</small></label>
       <label class="journal-field">事件或状态笔记（可选，最多 200 字）<textarea name="note" maxlength="200" rows="3" placeholder="例如：会议后有些焦虑，散步后缓和了一点。请不要填写姓名、联系方式或他人隐私。"></textarea></label>
-      <p class="small muted">笔记和分值都是敏感记录，仅在此浏览器保存，不上传。共享设备可能让其他人看到，清理浏览器数据会丢失记录。</p>
+      </details><p class="small muted">笔记和分值都是敏感记录，仅在此浏览器保存，不上传。共享设备可能让其他人看到，清理浏览器数据会丢失记录。</p>
       <button class="button primary full" type="submit">保存心情日志</button>
       <button class="button text-button full" type="button" data-action="close-journal">暂时不保存</button>
     </form>

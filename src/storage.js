@@ -27,7 +27,7 @@ export function remove(storage, id) { storage.setItem(KEY, JSON.stringify(read(s
 export function clear(storage) { storage.removeItem(KEY); }
 
 const JOURNAL_KEY = 'daily-mind-journal-v1';
-export const eventTypes = ['无特定事件', '工作 / 学业', '人际 / 家庭', '健康 / 身体', '睡眠 / 作息', '其他事件'];
+export const eventTypes = ['组会', '实验', '工作', '人际', '休息', '积极小事', '无特定事件', '工作 / 学业', '人际 / 家庭', '健康 / 身体', '睡眠 / 作息', '其他事件'];
 export const emotionTypes = ['未选择', '开心', '平静', '难过', '焦虑', '愤怒', '混合感受'];
 function validJournal(r) {
   return r && typeof r.id === 'string' && Number.isFinite(r.timestamp) &&
@@ -36,7 +36,7 @@ function validJournal(r) {
     (r.sleep === null || Number.isFinite(r.sleep) && r.sleep >= 0 && r.sleep <= 24) &&
     eventTypes.includes(r.eventType) && emotionTypes.includes(r.emotion) &&
     Number.isInteger(r.eventImpact) && r.eventImpact >= 0 && r.eventImpact <= 3 &&
-    typeof r.note === 'string' && r.note.length <= 200;
+    (r.eventTag === undefined || typeof r.eventTag === 'string' && r.eventTag.length <= 30) && typeof r.note === 'string' && r.note.length <= 200;
 }
 export function readJournal(storage) {
   const raw = storage.getItem(JOURNAL_KEY);

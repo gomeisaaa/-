@@ -18,7 +18,7 @@ export function buildTrend(entries, days = 7, now = Date.now()) {
     const last = items.at(-1);
     return { key, label: `${date.getMonth() + 1}/${date.getDate()}`, count: items.length,
       mood: last ? last.mood : null, excitement: last ? Math.max(...items.map(r => r.excitement)) : null,
-      events: items.filter(r => r.eventType !== '无特定事件').map(r => ({ type: r.eventType, emotion: r.emotion, impact: r.eventImpact })) };
+      events: items.filter(r => r.eventType !== '无特定事件' || r.eventTag).map(r => ({ type: r.eventTag || r.eventType, emotion: r.emotion, impact: r.eventImpact })) };
   });
 }
 // Split on missing days: missing data must never appear as zero or a continuous trend.

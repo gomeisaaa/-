@@ -1,4 +1,4 @@
-import { dayKey } from './trends.js?v=7acf88ca4ab72ec3';
+import { dayKey } from './trends.js?v=support25';
 const CYCLE_KEY = 'her-space-periods-v1';
 export function validDay(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -26,3 +26,13 @@ export function savePeriod(storage, entry, now = Date.now()) {
 }
 export function removePeriod(storage, start) { storage.setItem(CYCLE_KEY, JSON.stringify(readPeriods(storage).filter(r => r.start !== start))); }
 export function clearPeriods(storage) { storage.removeItem(CYCLE_KEY); storage.removeItem('her-space-cycle-context-v1'); }
+
+export function estimatePeriod(periods) {
+  if (periods.length < 3) return null;
+  const recent = periods.slice(-7);
+  const intervals = recent.slice(1).map((p,i) => daysBetween(recent[i].start,p.start));
+  if (intervals.some(n => n < 21 || n > 45) || Math.max(...intervals)-Math.min(...intervals) > 9) return null;
+  const average = Math.round(intervals.reduce((a,b) => a+b,0)/intervals.length);
+  const d = new Date(recent.at(-1).start+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+average);
+  return { start: d.toISOString().slice(0,10), average, count: intervals.length };
+}

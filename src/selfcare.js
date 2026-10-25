@@ -1,4 +1,4 @@
-import { dayKey } from './trends.js?v=7acf88ca4ab72ec3';
+import { dayKey } from './trends.js?v=support25';
 const SELFCARE_KEY = 'daily-mind-small-things-v1';
 const taskPools = [
   [
@@ -33,13 +33,6 @@ const taskPools = [
   ]
 ];
 const knownIds = new Set(taskPools.flat().map(t => t.id));
-// Short, public-domain quotations. English translations below are our own.
-const quotations = [
-  { text: '我不是鸟，也没有罗网困住我；我是一个拥有独立意志的自由的人。', original: 'I am no bird; and no net ensnares me: I am a free human being with an independent will.', author: '夏洛蒂·勃朗特', source: '《简·爱》第 23 章，1847 · 中文为自译' },
-  { text: '希望是长着羽毛的东西，栖息在灵魂里。', original: '“Hope” is the thing with feathers — That perches in the soul —', author: '艾米莉·狄金森', source: '诗作 “Hope” is the thing with feathers，约 1861 · 中文为自译' },
-  { text: '采菊东篱下，悠然见南山。', original: '', author: '陶渊明', source: '《饮酒·其五》' },
-  { text: '何须浅碧深红色，自是花中第一流。', original: '', author: '李清照', source: '《鹧鸪天·桂花》' }
-];
 function hash(text) { let value = 0; for (const c of text) value = (value * 31 + c.charCodeAt(0)) >>> 0; return value; }
 function readDailyStates(storage) {
   const raw = storage.getItem(SELFCARE_KEY);
@@ -47,23 +40,39 @@ function readDailyStates(storage) {
   let states;
   try { states = JSON.parse(raw); } catch { throw new Error('每日小事记录损坏，不会自动覆盖。'); }
   if (!Array.isArray(states) || states.some(s => !s || !/^\d{4}-\d{2}-\d{2}$/.test(s.day) || !Array.isArray(s.completed) || s.completed.length > 5 || new Set(s.completed).size !== s.completed.length || s.completed.some(id => !knownIds.has(id)))) throw new Error('每日小事格式异常，不会自动覆盖。');
+  if (states.some(s => s.selected !== undefined && (!Array.isArray(s.selected) || s.selected.length > 3 || new Set(s.selected).size !== s.selected.length || s.selected.some(id => !knownIds.has(id))) || s.offsets !== undefined && (!Array.isArray(s.offsets) || s.offsets.length > 5 || s.offsets.some(n => n !== null && (!Number.isSafeInteger(n) || n < 0))) || s.resting !== undefined && typeof s.resting !== 'boolean')) throw new Error('行动记录格式异常，不会自动覆盖。');
   return states;
 }
 export function dailyTasks(storage, now = Date.now()) {
   const day = dayKey(now);
-  const state = readDailyStates(storage).find(s => s.day === day);
-  const completed = state ? state.completed : [];
-  const tasks = taskPools.map((pool, index) => ({ ...pool[hash(`${day}:${index}`) % pool.length] }));
-  tasks.forEach(t => { t.done = completed.includes(t.id); });
-  const done = tasks.filter(t => t.done).length;
-  return { day, tasks, done, complete: done === 5, quote: done === 5 ? quotations[hash(day) % quotations.length] : null };
+  const state = readDailyStates(storage).find(s => s.day === day) || { completed: [] };
+  const tasks = taskPools.map((pool, i) => ({ ...pool[(hash(`${day}:${i}`) + (state.offsets?.[i] || 0)) % pool.length] }));
+  const chosen = state.selected || state.completed.slice(0, 3);
+  tasks.forEach(t => { t.selected = chosen.includes(t.id); t.done = t.selected && state.completed.includes(t.id); });
+  return { day, tasks, selected: chosen.length, done: tasks.filter(t => t.done).length, resting: !!state.resting, offsets: state.offsets || [] };
 }
-export function toggleDailyTask(storage, id, now = Date.now()) {
+export function updateDailyTask(storage, action, id, now = Date.now()) {
   const daily = dailyTasks(storage, now);
-  if (!daily.tasks.some(t => t.id === id)) throw new Error('今天的任务已更新，请重新查看。');
-  const completed = daily.tasks.filter(t => t.done).map(t => t.id);
-  const updated = completed.includes(id) ? completed.filter(t => t !== id) : [...completed, id];
-  const states = [{ day: daily.day, completed: updated }, ...readDailyStates(storage).filter(s => s.day !== daily.day)].sort((a, b) => b.day.localeCompare(a.day)).slice(0, 90);
+  const task = daily.tasks.find(t => t.id === id);
+  let selected = daily.tasks.filter(t => t.selected).map(t => t.id);
+  let completed = daily.tasks.filter(t => t.done).map(t => t.id);
+  const offsets = [...daily.offsets]; let resting = daily.resting;
+  if (action === 'rest') { resting = true; }
+  else if (action === 'return') { resting = false; }
+  else {
+    if (!task) throw new Error('请重新查看今天的建议。');
+    if (action === 'choose') {
+      if (selected.includes(id)) { selected = selected.filter(x => x !== id); completed = completed.filter(x => x !== id); }
+      else { if (selected.length >= 3) throw new Error('最多选择 3 项；可以先取消一项。'); selected.push(id); }
+    }
+    if (action === 'done' && task.selected) completed = task.done ? completed.filter(x => x !== id) : [...completed, id];
+    if (action === 'replace') {
+      const i = daily.tasks.indexOf(task); offsets[i] = (offsets[i] || 0) + 1;
+      const replacement = taskPools[i][(hash(`${daily.day}:${i}`) + offsets[i]) % taskPools[i].length];
+      selected = selected.map(x => x === id ? replacement.id : x); completed = completed.filter(x => x !== id);
+    }
+  }
+  const states = [{ day: daily.day, selected, completed, offsets, resting }, ...readDailyStates(storage).filter(s => s.day !== daily.day)].sort((a,b) => b.day.localeCompare(a.day)).slice(0,90);
   storage.setItem(SELFCARE_KEY, JSON.stringify(states));
   return dailyTasks(storage, now);
 }
