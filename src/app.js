@@ -1,16 +1,16 @@
-import {clearDB,allEvents} from './event-db.js?v=v30';
-import {getEvents,cycleUnknown} from './events-ui.js?v=v30';
-import {hydratePhotos,bindPhotos} from './photos.js?v=v30';
-import {memoriesView,bindMemories} from './memories.js?v=v30';
-import { eventsView, bindEvents, refreshEvents, openEvent } from './events-ui.js?v=v30';
-import { domains, sharedQuestions } from './questions.js?v=v30';
-import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern, phqActive, phqReminder } from './phq9-ui.js?v=v30';
-import { initializeV3, clearAllVersionedData, exportRawData } from './versioned-data.js?v=v30';
-import * as records from './storage.js?v=v30';
-import { buildTrend, chartSegments } from './trends.js?v=v30';
-import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=v30';
+import {clearDB,allEvents} from './event-db.js?v=v30r1';
+import {getEvents,cycleUnknown} from './events-ui.js?v=v30r1';
+import {hydratePhotos,bindPhotos} from './photos.js?v=v30r1';
+import {memoriesView,bindMemories} from './memories.js?v=v30r1';
+import { eventsView, bindEvents, refreshEvents, openEvent } from './events-ui.js?v=v30r1';
+import { domains, sharedQuestions } from './questions.js?v=v30r1';
+import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern, phqActive, phqReminder } from './phq9-ui.js?v=v30r1';
+import { initializeV3, clearAllVersionedData, exportRawData } from './versioned-data.js?v=v30r1';
+import * as records from './storage.js?v=v30r1';
+import { buildTrend, chartSegments } from './trends.js?v=v30r1';
+import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=v30r1';
 
-import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=v30';
+import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=v30r1';
 
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#help-dialog');

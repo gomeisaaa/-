@@ -1,5 +1,5 @@
-import { scorePHQ, safetyMessage, frequencyStatus } from './phq9-scoring.js?v=v30';
-import { initializeV3, readPHQ, savePHQ, deletePHQ } from './versioned-data.js?v=v30';
+import { scorePHQ, safetyMessage, frequencyStatus } from './phq9-scoring.js?v=v30r1';
+import { initializeV3, readPHQ, savePHQ, deletePHQ } from './versioned-data.js?v=v30r1';
 export const sourceVersion = 'user-supplied-CUHK-infographic-2026-11-01-zh-Hant';
 export const items = [
  '做任何事都覺得沉悶或者根本不想做任何事', '情緒低落、抑鬱或絕望',

@@ -1,16 +1,26 @@
-import {readJournal} from './storage.js?v=v30';
-import {preparePhoto,photoChange} from './photos.js?v=v30';
-import {saveEventWithPhoto} from './event-db.js?v=v30';
-import {memoryCardControl,memorySuggestion} from './memories.js?v=v30';
-import {allEvents,putEvent,deleteEvent,clearDB,setting} from './event-db.js?v=v30';
-import {dayKey} from './trends.js?v=v30';
-import {cycleSeries} from './cycle-trends.js?v=v30';
-import {initializeV3} from './versioned-data.js?v=v30';
-import {phqHistory,hasSafetyConcern} from './phq9-ui.js?v=v30';
+import {readJournal} from './storage.js?v=v30r1';
+import {preparePhoto,photoChange} from './photos.js?v=v30r1';
+import {saveEventWithPhoto} from './event-db.js?v=v30r1';
+import {memoryCardControl,memorySuggestion} from './memories.js?v=v30r1';
+import {allEvents,putEvent,deleteEvent,clearDB,setting} from './event-db.js?v=v30r1';
+import {dayKey} from './trends.js?v=v30r1';
+import {cycleSeries} from './cycle-trends.js?v=v30r1';
+import {initializeV3} from './versioned-data.js?v=v30r1';
+import {phqHistory,hasSafetyConcern} from './phq9-ui.js?v=v30r1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let entries=[], error='', offset=0, view='cycle', chosen=dayKey(Date.now()), unknown=false;
 let refresh, go, periodsUI, periods;
-export async function refreshEvents() {try{entries=await allEvents();error='';unknown=!!await setting('cycle-unknown');try{const legacy=readJournal(localStorage).map(r=>({version:3,id:'legacy:'+r.id,timestamp:r.timestamp,mood:r.mood,title:r.eventTag||r.eventType,note:r.note,tag:r.eventTag||r.eventType,emotion:r.emotion==='未选择'?'其他':r.emotion,favorite:false,legacy:true}));entries=[...entries,...legacy].sort((a,b)=>b.timestamp-a.timestamp);}catch(e){error='旧版日志暂不可读，原数据未覆盖；V3事件仍可独立记录。';}}catch(e){error=e.message;} }
+let loadSerial=0;
+export async function refreshEvents() {
+ const token=++loadSerial;
+ try {
+  let next=await allEvents();let nextError='';const nextUnknown=!!await setting('cycle-unknown');
+  try {const legacy=readJournal(localStorage).map(r=>({version:3,id:'legacy:'+r.id,timestamp:r.timestamp,mood:r.mood,title:r.eventTag||r.eventType,note:r.note,tag:r.eventTag||r.eventType,emotion:r.emotion==='未选择'?'其他':r.emotion,favorite:false,legacy:true}));next=[...next,...legacy].sort((a,b)=>b.timestamp-a.timestamp);}
+  catch {nextError='旧版日志暂不可读，原数据未覆盖；V3事件仍可独立记录。';}
+  if(token===loadSerial){entries=next;error=nextError;unknown=nextUnknown;}
+ } catch(e) {if(token===loadSerial)error=e.message;}
+}
+
 function card(e) {return `<article class="journal-entry"><div class="row"><strong>${esc(e.title||'这一刻')} · ${new Date(e.timestamp).toLocaleString('zh-CN')}</strong>${e.legacy?'<a class="inline-link" href="#legacy">管理旧版记录</a>':`<button class="inline-link" data-action="event-edit" data-id="${esc(e.id)}">编辑</button>`}</div><p>${esc(e.emotion)} · 心情方向 ${e.mood>0?'+':''}${e.mood}${e.tag?` · ${esc(e.tag)}`:''}</p>${e.note?`<p class="journal-note">${esc(e.note)}</p>`:''}<div data-photo-id="${esc(e.id)}"></div>${memoryCardControl(e)}${e.legacy?'<p class="small muted">旧版记录 · 保留原值，在旧版入口编辑或删除。</p>':`<button class="inline-link" data-action="event-delete" data-id="${esc(e.id)}">删除事件</button>`}</article>`;}
 export function eventCards(rows){return rows.map(card).join('');}
 function calendar(){const now=new Date();const d=new Date(now.getFullYear(),now.getMonth()+offset,1);const y=d.getFullYear(),m=d.getMonth();return `<div class="section-heading"><button class="button secondary" data-action="event-prev" aria-label="情绪日历上个月">←</button><h2>${y}年${m+1}月</h2><button class="button secondary" data-action="event-next" aria-label="情绪日历下个月">→</button></div><div class="event-calendar">${['一','二','三','四','五','六','日'].map(t=>`<span>${t}</span>`).join('')}${'<span></span>'.repeat((d.getDay()+6)%7)}${Array.from({length:new Date(y,m+1,0).getDate()},(_,i)=>{const key=dayKey(new Date(y,m,i+1));const rows=entries.filter(e=>dayKey(e.timestamp)===key);return `<button data-action="event-day" data-day="${key}" aria-pressed="${chosen===key}" aria-label="${key}，${rows.length}条记录" ${key>dayKey(Date.now())?'disabled':''}>${i+1}<small>${rows.length?rows.map(e=>e.mood>0?'●':e.mood<0?'◆':'·').slice(0,3).join(''):''}</small></button>`;}).join('')}</div><section class="day-events"><h3>${chosen}</h3><button class="button primary" data-action="event-new" data-day="${chosen}">＋ 记录这个日期的心情</button>${eventCards(entries.filter(e=>dayKey(e.timestamp)===chosen))||'<p>这一天可以留白，也可以补记。</p>'}</section>`;}

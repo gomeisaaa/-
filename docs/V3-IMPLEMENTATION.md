@@ -122,3 +122,5 @@ V3事件独立带版本：id、timestamp、emotion、mood(-3..3)、title、note�
 截图：phase1-safety.png、phase2-calendar.png、phase3-memory.png、phase4-home.png，均在docs/screenshots；全部使用合成测试记录。
 
 阶段提交：98d6ecb（基础）、467e16f（阶段一）、c98f649（阶段二）、bc86562（阶段三）；阶段四以本文件所在提交为准。阶段二首次浏览器检查失败已在阶段三修复并重跑，交付测试均以最终运行结果为准。
+
+发布后复查修复：并发刷新时旧日志只读投影可能重复出现在界面（不修改原始数据）。改为局部快照合并并用读取序号丢弃过时响应，browser-legacy新增单条投影断言，随后五个浏览器回归全部通过。静态资源查询版本更新为v30r1，避免上一份V3缓存。已推送原gh-pages；线上页面仍因环境代理403无法独立确认部署成功。
