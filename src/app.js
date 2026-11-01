@@ -1,3 +1,4 @@
+import { eventsView, bindEvents, refreshEvents, openEvent } from './events-ui.js?v=v30';
 import { domains, sharedQuestions } from './questions.js?v=support27';
 import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern } from './phq9-ui.js?v=v30';
 import { initializeV3, clearAllVersionedData, exportRawData } from './versioned-data.js?v=v30';
@@ -180,7 +181,7 @@ function navigate(route) {
 function render(focus = true) {
   let route = location.hash.slice(1) || 'home';
   if (!welcomeSeen) route = 'welcome';
-  if (!['welcome', 'home', 'action', 'intro', 'check', 'result', 'history', 'about'].includes(route)) route = 'home';
+  if (!['welcome', 'home', 'action', 'intro', 'check', 'result', 'history', 'legacy', 'memories', 'about'].includes(route)) route = 'home';
   if (lastRoute === 'check' && !['check','result'].includes(route)) resetPHQ();
   document.body.dataset.view = route;
   loadHistory();
@@ -189,7 +190,7 @@ function render(focus = true) {
     a.classList.toggle('active', active);
     if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  main.innerHTML = ({ welcome, home, action: actionView, intro, check, result: resultView, history: historyView, about }[route])();
+  main.innerHTML = ({ welcome, home, action: actionView, intro, check, result: resultView, history: eventsView, legacy: historyView, memories: eventsView, about }[route])();
   if (route === 'about') {
     const toc = main.querySelector('.about-toc');
     main.querySelectorAll('.prose h2').forEach((heading, i) => { heading.id = 'about-section-' + i; const b = document.createElement('button'); b.textContent = heading.textContent; b.dataset.action = 'about-section'; b.dataset.target = heading.id; toc.append(b); });
@@ -318,7 +319,7 @@ document.addEventListener('click', event => {
       }
       break;
     case 'close-help': dialog.close(); break;
-    case 'journal': openJournal(); break;
+    case 'journal': openEvent(); break;
     case 'close-journal': document.querySelector('#journal-dialog').close(); break;
     case 'trend-day': { const entries = journalCache.filter(r => localDay(r.timestamp) === el.dataset.day); const panel = document.querySelector('#day-detail'); panel.innerHTML = `<h3>${escape(el.dataset.day)} 的记录</h3>${entries.map(journalCard).join('')}`; panel.focus(); break; }
     case 'trend-range': trendRange = Number(el.dataset.days); render(false); break;
@@ -356,4 +357,5 @@ document.addEventListener('keydown', event => {
 window.addEventListener('storage', event => { if (event.key === 'her-space-theme-v1') applyTheme(event.newValue); render(false); });
 window.addEventListener('beforeunload', event => { if (document.body.dataset.view==='check') { event.preventDefault(); event.returnValue = ''; } });
 bindPHQ({navigate,render,periods:()=>readPeriods(localStorage)});
+bindEvents({navigate,render,periods:()=>readPeriods(localStorage),periodsUI:cyclePanel});
 render();

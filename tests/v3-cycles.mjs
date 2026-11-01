@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {cycleSeries} from '../src/cycle-trends.js';
+const t=s=>new Date(s+'T12:00:00').getTime();
+const rows=[{timestamp:t('2026-10-01'),mood:-2},{timestamp:t('2026-10-01')+1000,mood:2},{timestamp:t('2026-10-03'),mood:-1},{timestamp:t('2026-10-29'),mood:0}];
+const p=[{start:'2026-10-01'},{start:'2026-10-29'}];
+const series=cycleSeries(rows,p,t('2026-11-01'));
+assert.equal(series[0].length,28);assert.equal(series[1].length,4);
+assert.deepEqual(series[0].points.map(p=>p.day),[1,3]);assert.equal(series[0].points[0].mood,2);assert.equal(series[1].points[0].date,'2026-10-29');assert.equal(cycleSeries(rows,[]).length,0);
+assert.equal(cycleSeries([{timestamp:t('2024-02-29'),mood:1}],[{start:'2024-02-28'}],t('2024-03-01'))[0].points[0].day,2);
+console.log('PASS cycle start/day coordinates, daily last entry, distinct cycle lengths, date retention, missing days and leap day');

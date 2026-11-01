@@ -11,7 +11,7 @@ export function read(storage) {
   let parsed;
   try { parsed = JSON.parse(raw); } catch { throw new Error('本机记录无法读取。请先导出或清理损坏记录，不会自动覆盖。'); }
   if (!Array.isArray(parsed) || parsed.some(r => !r || typeof r.id !== 'string' || !Number.isFinite(r.timestamp) || !levels.includes(r.level) || !Array.isArray(r.domains) || r.domains.some(n => !allowedNames.includes(n)) || r.scores !== undefined && !validScores(r.scores))) throw new Error('本机记录格式异常，不会自动覆盖。');
-  return parsed.slice(0, 90);
+  return parsed;
 }
 export function save(storage, result, id) {
   const records = read(storage);
@@ -21,7 +21,7 @@ export function save(storage, result, id) {
     record.scores = result.scores.map(({ id, score }) => ({ id, score }));
     if (!validScores(record.scores)) throw new Error('Invalid scores');
   }
-  storage.setItem(KEY, JSON.stringify([record, ...records.filter(r => r.id !== id)].slice(0, 90)));
+  storage.setItem(KEY, JSON.stringify([record, ...records.filter(r => r.id !== id)]));
 }
 export function remove(storage, id) { storage.setItem(KEY, JSON.stringify(read(storage).filter(r => r.id !== id))); }
 export function clear(storage) { storage.removeItem(KEY); }
@@ -44,12 +44,12 @@ export function readJournal(storage) {
   let parsed;
   try { parsed = JSON.parse(raw); } catch { throw new Error('心情日志损坏，不会自动覆盖。'); }
   if (!Array.isArray(parsed) || parsed.some(r => !validJournal(r))) throw new Error('心情日志格式异常，不会自动覆盖。');
-  return parsed.sort((a, b) => b.timestamp - a.timestamp).slice(0, 90);
+  return parsed.sort((a, b) => b.timestamp - a.timestamp);
 }
 export function saveJournal(storage, entry) {
   if (!validJournal(entry)) throw new Error('请检查心情、兴奋程度、睡眠与事件记录的取值。');
   const current = readJournal(storage);
-  const sorted = [entry, ...current.filter(r => r.id !== entry.id)].sort((a, b) => b.timestamp - a.timestamp).slice(0, 90);
+  const sorted = [entry, ...current.filter(r => r.id !== entry.id)].sort((a, b) => b.timestamp - a.timestamp);
   storage.setItem(JOURNAL_KEY, JSON.stringify(sorted));
 }
 export function removeJournal(storage, id) { storage.setItem(JOURNAL_KEY, JSON.stringify(readJournal(storage).filter(r => r.id !== id))); }
