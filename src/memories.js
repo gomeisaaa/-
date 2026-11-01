@@ -1,7 +1,7 @@
-import {putEvent,setting,deleteEvent} from './event-db.js?v=v30r1';
-import {getEvents,refreshEvents,eventCards} from './events-ui.js?v=v30r1';
-import {dayKey} from './trends.js?v=v30r1';
-import {hasSafetyConcern} from './phq9-ui.js?v=v30r1';
+import {putEvent,setting,deleteEvent} from './event-db.js?v=cycle-axis1';
+import {getEvents,refreshEvents,eventCards} from './events-ui.js?v=cycle-axis1';
+import {dayKey} from './trends.js?v=cycle-axis1';
+import {hasSafetyConcern} from './phq9-ui.js?v=cycle-axis1';
 let enabled=true,recommend=true,chosen=null,feedback='',render,skipDay='';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function candidates(){return getEvents().filter(e=>e.favorite&&e.mood>0);}

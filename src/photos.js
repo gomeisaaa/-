@@ -1,4 +1,4 @@
-import {getPhoto,removePhoto} from './event-db.js?v=v30r1';
+import {getPhoto,removePhoto} from './event-db.js?v=cycle-axis1';
 let pending=undefined,previewURL=null,serial=0;
 const liveURLs=new Set();
 export async function compressPhoto(file){
