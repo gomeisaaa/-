@@ -11,9 +11,11 @@ export const items = [
 ];
 export const options = ['完全不會','幾天','一半以上的天數','近乎每天'];
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let active=false;
+export function phqActive(){return active;}
 let current = null, draft = Array(9).fill(null), saved = false, background = false;
 export function hasSafetyConcern() { return draft[8] > 0 || current?.answers[8] > 0; }
-export function resetPHQ() { draft=Array(9).fill(null); current=null; saved=false; background=false; }
+export function resetPHQ() { active=false;draft=Array(9).fill(null); current=null; saved=false; background=false; }
 function safety(value) { return `<section class="card safety-report" role="alert"><h2>先照顾你的安全</h2><p>${safetyMessage(value).message}</p><button class="button danger-button" data-action="help">我现在无法保持安全 / 查看即时帮助</button><p>这里没有实时监测或人工救援。求助不受自查间隔限制。</p></section>`; }
 function rows() { try { return readPHQ(localStorage); } catch { return null; } }
 export function phqIntro() {
@@ -37,9 +39,11 @@ export function bindPHQ({navigate,render,periods}) {
  document.addEventListener('change',e=>{if(!e.target.name?.startsWith('phq-'))return; const i=Number(e.target.name.slice(4)); draft[i]=Number(e.target.value); if(i===8){document.querySelector('#phq-live-safety').innerHTML=draft[8]>0?safety(draft[8]):'';if(draft[8]>0)document.querySelector('#phq-live-safety').scrollIntoView({block:'start'});}});
  document.addEventListener('submit',e=>{if(e.target.id!=='phq-form')return; e.preventDefault();try{scorePHQ(draft);current={schemaVersion:1,instrument:'PHQ-9',recallDays:14,id:crypto.randomUUID(),timestamp:Date.now(),sourceVersion,answers:[...draft],total:scorePHQ(draft).total};saved=false;navigate('result');}catch(err){const box=e.target.querySelector('.form-error');box.hidden=false;box.textContent=err.message;}});
  document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;
- if(b.dataset.action==='phq-start'){if(!document.querySelector('#phq-consent')?.checked){document.querySelector('#phq-intro-error').textContent='请先阅读并确认自愿开始。';return;}resetPHQ();navigate('check');}
+ if(b.dataset.action==='phq-start'){if(!document.querySelector('#phq-consent')?.checked){document.querySelector('#phq-intro-error').textContent='请先阅读并确认自愿开始。';return;}resetPHQ();active=true;navigate('check');}
  if(b.dataset.action==='phq-save'){try{initializeV3(localStorage);savePHQ(localStorage,current);saved=true;render(false);}catch(err){document.querySelector('#phq-result-status').textContent='保存失败，结果仍可查看：'+err.message;}}
  if(b.dataset.action==='phq-delete'&&confirm('删除这次PHQ-9记录？不会影响旧版记录。')){try{deletePHQ(localStorage,b.dataset.id);render(false);}catch(err){alert(err.message);}}
  if(b.dataset.action==='phq-background'){background=!background; const box=document.querySelector('#phq-background');try{const rows=periods();box.textContent=background?(rows.length?`你记录的最近一次经期开始日为 ${rows.at(-1).start}。疲劳或情绪可能受到睡眠、科研、工作、活动量、经期不适等多种因素影响。日期不能确认激素水平或因果，PHQ-9计分不变。明显困扰请寻求专业评估。`:'没有已记录的经期信息，不推断周期背景。'):'';b.textContent=background?'隐藏经期背景':'同意查看已记录的经期背景';}catch{box.textContent='经期信息暂不可读，不推断背景。';}}
  });
 }
+
+export function phqReminder(){const history=rows();if(history===null)return 'PHQ-9历史暂不可读，请先导出检查。';const s=frequencyStatus(history);return s.next?`${s.message} 建议日期：${new Date(s.next).toLocaleDateString('zh-CN')}。`:s.message;}

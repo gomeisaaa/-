@@ -1,4 +1,4 @@
-import { dayKey } from './trends.js?v=support27';
+import { dayKey } from './trends.js?v=v30';
 const SELFCARE_KEY = 'daily-mind-small-things-v1';
 const taskPools = [
   [

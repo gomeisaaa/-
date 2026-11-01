@@ -1,14 +1,16 @@
+import {clearDB,allEvents} from './event-db.js?v=v30';
+import {getEvents,cycleUnknown} from './events-ui.js?v=v30';
 import {hydratePhotos,bindPhotos} from './photos.js?v=v30';
 import {memoriesView,bindMemories} from './memories.js?v=v30';
 import { eventsView, bindEvents, refreshEvents, openEvent } from './events-ui.js?v=v30';
-import { domains, sharedQuestions } from './questions.js?v=support27';
-import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern } from './phq9-ui.js?v=v30';
+import { domains, sharedQuestions } from './questions.js?v=v30';
+import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern, phqActive, phqReminder } from './phq9-ui.js?v=v30';
 import { initializeV3, clearAllVersionedData, exportRawData } from './versioned-data.js?v=v30';
-import * as records from './storage.js?v=support27';
-import { buildTrend, chartSegments } from './trends.js?v=support27';
-import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=support27';
+import * as records from './storage.js?v=v30';
+import { buildTrend, chartSegments } from './trends.js?v=v30';
+import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=v30';
 
-import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=support27';
+import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=v30';
 
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#help-dialog');
@@ -72,15 +74,7 @@ function smallThings() {
   return `<section class="small-things-section"><div class="section-heading"><div><span class="eyebrow">按今天的精力来</span><h2>今天想试试什么？</h2></div><span>已选 ${daily.selected} / 3 项</span></div><p>下面是五个建议，选择 0–3 项就好。随时跳过、更换或撤销，没有补做、断签或扣分。</p><button class="button secondary full" data-action="task-rest">今天很累，我不想做任何事</button><div class="tiny-task-list">${daily.tasks.map(t => `<article class="tiny-task ${t.done ? 'done' : ''}"><div class="task-copy"><strong>${t.title}</strong><small>${t.note}</small><div class="task-controls"><button class="button secondary" data-action="task-choose" data-id="${t.id}" aria-pressed="${t.selected}">${t.selected ? '跳过 / 取消选择' : '选择这项'}</button>${t.selected ? `<button class="button secondary" data-action="toggle-task" data-id="${t.id}" aria-pressed="${t.done}">${t.done ? '撤销完成' : '完成了'}</button>` : ''}<button class="inline-link" data-action="task-replace" data-id="${t.id}">换一个建议</button></div></div></article>`).join('')}</div><p class="task-reward" role="status">${daily.done ? '你为自己做了一点事情。可以就停在这里，不必再多做。' : '今天不选择任何行动，也欢迎你来这里歇一会儿。'}</p><button class="inline-link task-clear" data-action="clear-tasks">清除行动记录</button></section>`;
 }
 function home() {
-  const latest = historyCache[0];
-  return `${reminderEnabled ? '<aside class="card" role="status">想留一笔此刻的心情吗？今天跳过也可以。<button class="inline-link" data-action="journal">记一笔</button><button class="inline-link" data-action="reminder">关闭提醒</button></aside>' : ''}<section class="page-heading"><div><div class="eyebrow">DAILY CHECK-IN</div><h1>今天，给自己一点时间。</h1><p class="muted">不急着判断对错，先听听身体与情绪的声音。</p></div><div class="date-chip"><span class="status-dot"></span>${date(Date.now())}</div></section>
-    <section class="hero"><div class="hero-copy"><span class="hero-label">每一次觉察，都是照顾自己的开始</span><h2>你今天，<br>感觉怎么样？</h2><p>可以选一选心情，或用自查整理此刻状态。<br>PHQ-9回顾过去两周，无两周频率。</p><button class="button secondary" data-action="journal">快速记心情</button><button class="button primary" data-action="intro">开始 PHQ-9 <span aria-hidden="true">↗</span></button><div class="hero-meta"><span>◷ 约 2–3 分钟</span><span>◇ 非诊断性筛查</span></div></div>${leafArt}<span class="hero-caption">慢一点，也没关系。</span></section>
-    <div class="module-links"><a href="#action">行动 · 任选的小行动 →</a><a href="#history">记录 · 心情与经期 →</a><a href="#about">工具说明 · 使用与记录 →</a></div>
-    <section class="quick-stats" aria-label="自查概览"><div><span class="stat-icon">☷</span><div><strong>完整九题 · 过去两周</strong><p>不删改第9题，不自动诊断</p></div></div><div><span class="stat-icon">⤳</span><div><strong>每14天温和提醒</strong><p>仍可自愿提前测评</p></div></div><div><span class="stat-icon">▣</span><div><strong>由你决定是否保存</strong><p>无账号，不上传自查数据</p></div></div></section>
-    <div class="section-heading"><h2>先了解，再开始</h2><span>让自查成为一种温柔的习惯</span></div>
-    <section class="info-grid"><article class="card"><span class="card-kicker">01 / 自查方式</span><h3>关注今天，也看见变化</h3><p>PHQ-9完整九题回顾过去两周。总分0–27，仅作抑郁症状程度筛查参考。</p><div class="tag-row"><span>每日状态</span><span>两周频率</span><span>行动建议</span></div></article><article class="card"><span class="card-kicker">02 / 使用说明</span><h3>记录留在你的设备里</h3><p>记下心情、事件和经期，慢慢看见自己的变化。记录仅保存在当前浏览器，可修改或删除；自查帮助了解状态，不能代替诊断。</p><a class="inline-link" href="#about">查看使用说明 <span aria-hidden="true">→</span></a></article></section>
-    <section class="recent-strip"><div class="recent-icon">◷</div><div><h3>${latest ? '上一次，你为自己留了一份记录' : '留一点空间，给未来的自己'}</h3><p>${latest ? `${date(latest.timestamp)} · ${levelNames[latest.level]}` : '完成后可选择保存摘要，慢慢看见自己的状态变化。'}</p></div><a href="#history" class="inline-link">查看记录 →</a></section>
-    ${storageError ? `<p class="storage-warning" role="status">${storageError}</p>` : ''}`;
+ return `<section class="page-heading"><div><span class="eyebrow">HER LITTLE SPACE · V3.0</span><h1>把今天的感受，轻轻放在这里。</h1><p class="muted">你的周期、你的经历、你的节奏。无需每天记录。</p></div><div class="date-chip">${date(Date.now())}</div></section><section class="hero"><div class="hero-copy"><span class="hero-label">不用先解释清楚，也可以开始</span><h2>今天发生了什么，<br>你想记住吗？</h2><p>在日历里记录不同的心情与事件，<br>把周期作为背景，慢慢回顾自己的变化。</p><a class="button primary" href="#history">打开周期情绪记录 →</a><button class="button secondary" data-action="event-new">记一件事</button></div>${leafArt}</section><section class="info-grid"><article class="card"><span class="eyebrow">过去两周</span><h2>PHQ-9 状态自查</h2><p>完整九题，抑郁症状程度筛查参考。提醒每14天一次，仍可按需要提前自查；结果不是诊断。</p><p>${phqReminder()}</p><a class="button secondary" href="#intro">了解并开始 PHQ-9</a></article><article class="card"><span class="eyebrow">按今天的精力</span><h2>小行动，或安心休息</h2><p>从五个建议中任选0–3项。累了什么都不做，也能收到一句小小的鼓励。</p><a class="button secondary" href="#action">去看看行动与休息</a></article></section><div class="module-links"><a href="#memories">我的温暖记忆 →</a><a href="#about">隐私与工具说明 →</a><a href="#legacy">旧版记录 →</a></div>${reminderEnabled?'<aside class="card" role="status">想记一笔此刻的心情吗？今天跳过也可以。<button class="inline-link" data-action="event-new">记一笔</button><button class="inline-link" data-action="reminder">关闭轻提醒</button></aside>':''}`;
 }
 function intro() { return phqIntro(); }
 function check() { return phqCheck(); }
@@ -147,7 +141,7 @@ try { predictionEnabled = localStorage.getItem('her-space-prediction-v1') === 'o
 function cycleCalendar(periods) {
   const today = new Date(); const month = new Date(today.getFullYear(), today.getMonth()+calendarOffset, 1);
   const year = month.getFullYear(), m = month.getMonth();
-  const estimate = predictionEnabled ? estimatePeriod(periods) : null;
+  const estimate = predictionEnabled && !cycleUnknown() ? estimatePeriod(periods) : null;
   const cells = Array.from({length: (month.getDay()+6)%7}, () => '<span></span>');
   for (let n=1; n<=new Date(year,m+1,0).getDate(); n++) {
     const key = localDay(new Date(year,m,n));
@@ -155,7 +149,7 @@ function cycleCalendar(periods) {
     const predicted = estimate && Math.abs(daysBetween(estimate.start,key)) <= 3;
     cells.push(`<div class="calendar-day ${recorded?'recorded':predicted?'predicted':''}" aria-label="${key}${recorded?' 已记录出血':predicted?' 估算开始日期范围':''}">${n}</div>`);
   }
-  return `<section class="prediction-summary"><h3>下次经期参考</h3><button class="button secondary" data-action="prediction" aria-pressed="${predictionEnabled}">${predictionEnabled?'关闭':'开启'}经期估算</button><p role="status">${!predictionEnabled ? '开启后，根据已记录的周期估算下次开始日期。' : !estimate ? `还不能估算：${periods.length < 3 ? `目前有 ${periods.length} 次记录，请补充至至少 3 次真实开始日期。` : '最近的日期间隔不够规律，暂不提供可能误导的预测。'}` : estimate.start < localDay(Date.now()) ? `上次估算的开始日为 ${estimate.start}，现已过去。请补记实际经期；不会自动滚动推算下一周期。` : `预计下次开始日：${estimate.start}（仅供参考）。`}</p>${predictionEnabled && estimate ? '<button class="inline-link" data-action="prediction-month">查看估算日期所在月份 →</button>' : ''}</section><div class="section-heading"><button class="button secondary" data-action="calendar-prev" aria-label="上个月">←</button><h3>${year} 年 ${m+1} 月</h3><button class="button secondary" data-action="calendar-next" aria-label="下个月">→</button></div><div class="cycle-calendar">${['一','二','三','四','五','六','日'].map(d=>`<strong>${d}</strong>`).join('')}${cells.join('')}</div><p class="small muted">实色：实际出血记录；虚线：估算开始日附近 ±3 天，仅作展示参考，不是置信区间，也不表示出血持续时间。</p><p class="small muted">${predictionEnabled ? estimate ? `根据最近 ${estimate.count} 个已记录间隔的平均值（${estimate.average} 天），下次开始日约为 ${estimate.start}。` : '至少需要 3 次开始日期；间隔不规则或超出估算范围时不提供预测。' : '估算默认关闭，可按需要开启。'} 记录缺漏、周期变化、用药等都会使估算不准，实际日期可能在标示范围之外。不用于避孕、排卵判断、疾病或激素推断。</p>`;
+  return `<section class="prediction-summary"><h3>下次经期参考</h3><button class="button secondary" data-action="prediction" aria-pressed="${predictionEnabled}">${predictionEnabled?'关闭':'开启'}经期估算</button><p role="status">${!predictionEnabled ? '开启后，根据已记录的周期估算下次开始日期。' : !estimate ? `还不能估算：${cycleUnknown() ? '你已选择阶段未知 / 不适用；不提供日期估算。' : periods.length < 3 ? `目前有 ${periods.length} 次记录，请补充至至少 3 次真实开始日期。` : '最近的日期间隔不够规律，暂不提供可能误导的预测。'}` : estimate.start < localDay(Date.now()) ? `上次估算的开始日为 ${estimate.start}，现已过去。请补记实际经期；不会自动滚动推算下一周期。` : `预计下次开始日：${estimate.start}（仅供参考）。`}</p>${predictionEnabled && estimate ? '<button class="inline-link" data-action="prediction-month">查看估算日期所在月份 →</button>' : ''}</section><div class="section-heading"><button class="button secondary" data-action="calendar-prev" aria-label="上个月">←</button><h3>${year} 年 ${m+1} 月</h3><button class="button secondary" data-action="calendar-next" aria-label="下个月">→</button></div><div class="cycle-calendar">${['一','二','三','四','五','六','日'].map(d=>`<strong>${d}</strong>`).join('')}${cells.join('')}</div><p class="small muted">实色：实际出血记录；虚线：估算开始日附近 ±3 天，仅作展示参考，不是置信区间，也不表示出血持续时间。</p><p class="small muted">${predictionEnabled ? estimate ? `根据最近 ${estimate.count} 个已记录间隔的平均值（${estimate.average} 天），下次开始日约为 ${estimate.start}。` : '至少需要 3 次开始日期；间隔不规则或超出估算范围时不提供预测。' : '估算默认关闭，可按需要开启。'} 记录缺漏、周期变化、用药等都会使估算不准，实际日期可能在标示范围之外。不用于避孕、排卵判断、疾病或激素推断。</p>`;
 }
 function cyclePanel() {
   let periods;
@@ -167,11 +161,11 @@ function actionView() {
   return `<section class="compact-heading"><span class="eyebrow">A LITTLE ACTION</span><h1>按自己的节奏，做或不做。</h1><p class="muted">想试试时选一件，累了就休息。这里没有必须完成的清单。</p></section>${smallThings()}<p class="small muted">这是日常自我关爱活动，不是专业艺术治疗、音乐治疗或医疗处方。没有立刻开心也不意味着失败。</p>`;
 }
 function introductionCopy() {
-  return `<h2>这里适合谁</h2><p>主要面向 18 岁及以上女性，尤其是在学习、科研、工作、人际或身体变化中感到疲惫、想更了解自己的人。不必先反复质疑自己“是不是真的有问题”，也不用等到明确了原因，才开始照顾自己的感受。</p><h2>在这里，我们可以提供哪些支持？</h2><p><strong>行动与休息：</strong>从简单建议中任选 0–3 项，完成自己选的全部行动后，会有一句小小的鼓励作为彩蛋。你可以随时跳过、换一项或撤销。如果今天没有力气，就选择休息，不需要补做，你的人生仍值得喝彩。什么都不做，也会收到一句支持你的话。</p><p><strong>轻量记录：</strong>选一选此刻的心情；事件、睡眠和文字笔记都可不填。也可以自愿进入更完整的自查，帮助整理感受和寻求支持时想说的话。</p><p><strong>回顾变化：</strong>查看心情趋势、事件和月度记录概况；经期记录与估算帮助安排生活，不解释激素，也不推断情绪的生理原因。</p><h2>这是你的情绪缓冲区，所以要怎么使用，都由你决定</h2><p>不要求每天来，不设连续打卡奖励或断签惩罚。各模块可单独使用，随时退出；休息、跳过或不保存都可以。这里提供日常支持，不保证改善，也不能代替诊断、治疗或紧急救援。PHQ-9用于抑郁症状程度筛查，不是诊断。题目逐字转录自用户提供、署名香港中文大学医院的繁体图示（2026-11-01），未独立核验发布页及授权；总分按五档标准参考，不使用附文三档划分。</p><h2>你的记录，由你掌握</h2><p>无需账号。心情、经期、行动与主动保存的自查摘要仅存在当前浏览器的 localStorage，不上传、不跨设备同步，且未加密。网站加载时托管服务仍会收到普通页面请求，但应用不会发送记录。共享设备可能暴露记录；清理浏览器数据会丢失记录。自查答案只在页面内存中，退出或刷新清除。</p><p>心情日志与自查摘要各保留最近 90 条，经期最多 48 条，行动保留最近 90 个有记录的日期。记录页可删除单条或清空敏感记录；行动页可清除行动记录。</p><h2>需要更多支持时</h2><p>困扰持续、加重或明显影响生活时，可以联系专业人员。无法保持安全、已经受伤或可能马上伤害自己或他人时，请立即联系当地紧急服务。页面顶部始终有即时帮助入口；本站没有实时监测或人工救援。</p>`;
+  return `<h2>这里适合谁</h2><p>主要面向 18 岁及以上女性，尤其是在学习、科研、工作、人际或身体变化中感到疲惫、想更了解自己的人。不必先反复质疑自己“是不是真的有问题”，也不用等到明确了原因，才开始照顾自己的感受。</p><h2>在这里，我们可以提供哪些支持？</h2><p><strong>行动与休息：</strong>从简单建议中任选 0–3 项，完成自己选的全部行动后，会有一句小小的鼓励作为彩蛋。你可以随时跳过、换一项或撤销。如果今天没有力气，就选择休息，不需要补做，你的人生仍值得喝彩。什么都不做，也会收到一句支持你的话。</p><p><strong>轻量记录：</strong>选一选此刻的心情；事件、睡眠和文字笔记都可不填。也可以自愿进入更完整的自查，帮助整理感受和寻求支持时想说的话。</p><p><strong>回顾变化：</strong>查看心情趋势、事件和月度记录概况；经期记录与估算帮助安排生活，不解释激素，也不推断情绪的生理原因。</p><h2>这是你的情绪缓冲区，所以要怎么使用，都由你决定</h2><p>不要求每天来，不设连续打卡奖励或断签惩罚。各模块可单独使用，随时退出；休息、跳过或不保存都可以。这里提供日常支持，不保证改善，也不能代替诊断、治疗或紧急救援。PHQ-9用于抑郁症状程度筛查，不是诊断。题目逐字转录自用户提供、署名香港中文大学医院的繁体图示（2026-11-01），未独立核验发布页及授权；总分按五档标准参考，不使用附文三档划分。</p><h2>你的记录，由你掌握</h2><p>无需账号。V3事件与照片保存在当前浏览器的 IndexedDB；PHQ-9完整回答、旧版记录、经期、行动与迁移备份保存在本机 localStorage。不上传、不跨设备同步，且未加密。网站加载时托管服务仍会收到普通页面请求，但应用不会发送记录。共享设备可能暴露记录；清理浏览器数据会丢失记录。未主动保存的PHQ-9回答只在页面内存中，退出或刷新清除；保存后保留完整九题及总分。</p><p>V3事件、PHQ-9及经期记录不再自动淘汰；旧版历史原样保留，原先已被旧版自动淘汰的记录无法恢复。行动仍保留最近90个有记录日期。升级前会保存一份原始旧数据备份，因此单条旧记录删除后可能仍在迁移备份中，需用“清空全部本地数据”一并删除。浏览器空间不足时会明确报错，请先导出文字或删除不需要的照片；不会悄悄覆盖旧事件。</p><h2>需要更多支持时</h2><p>困扰持续、加重或明显影响生活时，可以联系专业人员。无法保持安全、已经受伤或可能马上伤害自己或他人时，请立即联系当地紧急服务。页面顶部始终有即时帮助入口；本站没有实时监测或人工救援。</p>`;
 }
 function welcome() { return `<section class="compact-heading"><span class="eyebrow">欢迎来到她的缓冲区</span><h1>你好，我们是一款面向年轻女性的心理支持小工具</h1><p>你可以在这里记录自己的心情，自查今天的状态，也可以尝试一点小行动，或者只是停一会儿。</p></section><article class="card prose">${introductionCopy()}<button class="button primary" data-action="welcome-done">了解了，按我的节奏开始</button><button class="button text-button" data-action="welcome-done">暂时跳过介绍</button></article>`; }
 function about() {
-  return `<section class="compact-heading"><h1>需要时，回来看看怎么用。</h1><p>所有支持都可以选择，不必把照顾自己变成新的任务。</p></section><nav class="about-toc" aria-label="工具说明目录"></nav><article class="card prose simple-about">${introductionCopy()}<h2>轻提醒</h2><p>仅在打开首页时显示一句提醒，不发送系统通知，不催促补记。可以随时关闭。</p><button class="button secondary" data-action="reminder" aria-pressed="${reminderEnabled}">${reminderEnabled ? '关闭' : '开启'}轻提醒</button></article>`;
+  return `<section class="compact-heading"><h1>需要时，回来看看怎么用。</h1><p>所有支持都可以选择，不必把照顾自己变成新的任务。</p></section><nav class="about-toc" aria-label="工具说明目录"></nav><article class="card prose simple-about">${introductionCopy()}<h2>数据管理</h2><p>导出包含本机文字、PHQ-9完整回答和备份，不含照片。文件敏感，请妥善保管；不提供自动云备份或导入。</p><button class="button secondary" data-action="v3-export">导出本机文字数据</button><button class="button outline-button" data-action="v3-clear">清空全部本地数据</button><p id="data-status" role="status"></p><h2>轻提醒</h2><p>仅在打开首页时显示一句提醒，不发送系统通知，不催促补记。可以随时关闭。</p><button class="button secondary" data-action="reminder" aria-pressed="${reminderEnabled}">${reminderEnabled ? '关闭' : '开启'}轻提醒</button></article>`;
 }
 let welcomeSeen = false;
 try { welcomeSeen = localStorage.getItem('her-space-welcome-v1') === 'seen'; } catch {}
@@ -185,6 +179,7 @@ function render(focus = true) {
   if (!welcomeSeen) route = 'welcome';
   if (!['welcome', 'home', 'action', 'intro', 'check', 'result', 'history', 'legacy', 'memories', 'about'].includes(route)) route = 'home';
   if (lastRoute === 'check' && !['check','result'].includes(route)) resetPHQ();
+  if (route==='check' && !phqActive()) route='intro';
   document.body.dataset.view = route;
   loadHistory();
   document.querySelectorAll('[data-nav]').forEach(a => {
@@ -194,6 +189,7 @@ function render(focus = true) {
   });
   main.innerHTML = ({ welcome, home, action: actionView, intro, check, result: resultView, history: eventsView, legacy: historyView, memories: memoriesView, about }[route])();
   hydratePhotos(main);
+  document.querySelector('#nav-count').textContent=getEvents().length;
   if (route === 'about') {
     const toc = main.querySelector('.about-toc');
     main.querySelectorAll('.prose h2').forEach((heading, i) => { heading.id = 'about-section-' + i; const b = document.createElement('button'); b.textContent = heading.textContent; b.dataset.action = 'about-section'; b.dataset.target = heading.id; toc.append(b); });
@@ -341,15 +337,20 @@ document.addEventListener('click', event => {
         try { records.remove(localStorage, el.dataset.id); if (el.dataset.id === resultId) saved = false; render(); toast('该条记录已删除。'); } catch { toast('删除失败，请检查浏览器存储权限。'); }
       }
       break;
-    case 'clear':
-      if (confirm('清空全部自查摘要、PHQ-9、心情事件日志、备份和经期记录？行动记录也会清除，配色不受影响。此操作无法恢复。')) {
-        try { clearAllVersionedData(localStorage); saved = false; resetPHQ(); render(); toast('自查摘要、心情日志、经期和行动记录已清空。'); }
-        catch { render(false); toast('未能全部清空，部分记录可能已删除。请检查浏览器存储权限。'); }
+    case 'clear': document.querySelector('[data-action=v3-clear]')?.click(); if(document.body.dataset.view!=='about') navigate('about'); break;
+    case 'v3-export': {
+      (async()=>{try{const liveEvents=await allEvents();
+      const file = JSON.stringify({format:'her-space-v3-text-export',version:3,exportedAt:new Date().toISOString(),legacyAndPHQ:JSON.parse(exportRawData(localStorage)),events:liveEvents,photosIncluded:false},null,2);
+      const url=URL.createObjectURL(new Blob([file],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='her-space-text-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('文字导出已生成，不含照片。');}catch(err){toast('导出失败：'+err.message);}})();break;
+    }
+    case 'v3-clear':
+      if(confirm('清空全部事件、照片、PHQ-9完整回答、旧版记录、经期、行动及迁移备份？此操作无法恢复。配色保留。')) {
+        (async()=>{try{await clearDB();clearAllVersionedData(localStorage);localStorage.removeItem('her-space-cycle-context-v1');resetPHQ();await refreshEvents();render(false);toast('全部本地敏感记录及备份已清空。');}catch(err){toast('未能全部清空，部分数据可能已删除：'+err.message);}})();
       }
       break;
   }
 });
-window.addEventListener('hashchange', () => render());
+window.addEventListener('hashchange', () => {render();refreshEvents().then(()=>render(false));});
 document.addEventListener('keydown', event => {
   if (event.target.matches('[data-action="trend-day"]') && ['Enter',' '].includes(event.key)) { event.preventDefault(); event.target.dispatchEvent(new MouseEvent('click', {bubbles:true})); return; }
   const tab = event.target.closest('[role="tab"][data-tab]');
