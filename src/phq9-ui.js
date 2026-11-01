@@ -1,15 +1,15 @@
-import { scorePHQ, safetyMessage, frequencyStatus } from './phq9-scoring.js?v=cycle-axis1';
-import { initializeV3, readPHQ, savePHQ, deletePHQ } from './versioned-data.js?v=cycle-axis1';
-export const sourceVersion = 'user-supplied-CUHK-infographic-2026-11-01-zh-Hant';
+import { scorePHQ, safetyMessage, frequencyStatus } from './phq9-scoring.js?v=phq-hans1';
+import { initializeV3, readPHQ, savePHQ, deletePHQ } from './versioned-data.js?v=phq-hans1';
+export const sourceVersion = 'CUHK-infographic-2026-11-01-zh-Hans-display-v1';
 export const items = [
- '做任何事都覺得沉悶或者根本不想做任何事', '情緒低落、抑鬱或絕望',
- '難於入睡；半夜會醒或相反地睡覺時間過多', '覺得疲倦或活力不足', '胃口極差或進食過量',
- '不喜歡自己 - 覺得自己做得不好、對自己失望或有負家人期望',
- '難於集中精神做事，例如看報紙或看電視',
- '其他人反映你行動或說話遲緩；或者相反地，你比平常活動更多 - 坐立不安、停不下來',
- '想到自己最好去死或者自殘'
+ '做任何事都觉得沉闷或者根本不想做任何事', '情绪低落、抑郁或绝望',
+ '难于入睡；半夜会醒或相反地睡觉时间过多', '觉得疲倦或活力不足', '胃口极差或进食过量',
+ '不喜欢自己 - 觉得自己做得不好、对自己失望或有负家人期望',
+ '难于集中精神做事，例如看报纸或看电视',
+ '其他人反映你行动或说话迟缓；或者相反地，你比平常活动更多 - 坐立不安、停不下来',
+ '想到自己最好去死或者自残'
 ];
-export const options = ['完全不會','幾天','一半以上的天數','近乎每天'];
+export const options = ['完全不会','几天','一半以上的天数','近乎每天'];
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let active=false;
 export function phqActive(){return active;}
@@ -20,10 +20,10 @@ function safety(value) { return `<section class="card safety-report" role="alert
 function rows() { try { return readPHQ(localStorage); } catch { return null; } }
 export function phqIntro() {
  const history=rows(), status=frequencyStatus(history||[]);
- return `<section class="compact-heading"><h1>PHQ-9 · 两周状态自查</h1><p>回顾过去两周的出现频率，完整九题，约需2–3分钟。</p></section><article class="card prose"><p>${status.message}${status.next ? ` 下次建议日期：${new Date(status.next).toLocaleDateString('zh-CN')}。` : ''}</p>${history===null?'<p role="alert">PHQ-9历史暂不可读取，原记录不会覆盖。仍可自查，但请先导出异常记录。</p>':''}<p>每14天一次是本产品的低负担策略，不是对所有人的统一临床推荐。可以提前再做一次，也可以随时查看支持。</p><p>这是抑郁症状程度筛查参考，不能确诊疾病。题目保留你提供的香港中文大学医院图示繁体措辞；未独立核验其发布页或授权，版本见工具说明。</p><label class="consent"><input id="phq-consent" type="checkbox">我已满18岁，理解筛查不是诊断，愿意开始。</label><button class="button primary" data-action="phq-start">开始 PHQ-9</button><a class="button secondary" href="#home">暂时不做</a><p id="phq-intro-error" role="alert"></p><button class="inline-link" data-action="help">随时查看即时帮助</button></article>`;
+ return `<section class="compact-heading"><h1>PHQ-9 · 两周状态自查</h1><p>回顾过去两周的出现频率，完整九题，约需2–3分钟。</p></section><article class="card prose"><p>${status.message}${status.next ? ` 下次建议日期：${new Date(status.next).toLocaleDateString('zh-CN')}。` : ''}</p>${history===null?'<p role="alert">PHQ-9历史暂不可读取，原记录不会覆盖。仍可自查，但请先导出异常记录。</p>':''}<p>建议每14天回顾一次。需要时可以提前自查，也可以随时查看支持。</p><p>PHQ-9 是一种经过验证的抑郁症状筛查工具。本页采用简体中文呈现，帮助你回顾过去两周的状态；筛查结果不等于诊断。</p><label class="consent"><input id="phq-consent" type="checkbox">我已满18岁，理解筛查不是诊断，愿意开始。</label><button class="button primary" data-action="phq-start">开始 PHQ-9</button><a class="button secondary" href="#home">暂时不做</a><p id="phq-intro-error" role="alert"></p><button class="inline-link" data-action="help">随时查看即时帮助</button></article>`;
 }
 export function phqCheck() {
- return `<section class="compact-heading"><h1>PHQ-9 · 回顾过去两周</h1><p lang="zh-Hant">在過去兩個星期，你有多經常受以下問題困擾？</p><p>请选择频率，不要求你解释原因。可以随时退出；缺题不计算总分。</p></section><div id="phq-live-safety">${draft[8]>0?safety(draft[8]):''}</div><form id="phq-form" class="card"><p class="form-error" role="alert" hidden></p>${items.map((item,i)=>`<fieldset class="phq-item"><legend lang="zh-Hant">${i+1}. ${item}</legend><div class="phq-options">${options.map((o,n)=>`<label><input type="radio" name="phq-${i}" value="${n}" ${draft[i]===n?'checked':''} required><span lang="zh-Hant">${o}</span><small>${n}分</small></label>`).join('')}</div></fieldset>`).join('')}<button type="submit" class="button primary">查看本次结果</button><a class="button secondary" href="#home">退出，不保存</a></form>`;
+ return `<section class="compact-heading"><h1>PHQ-9 · 回顾过去两周</h1><p lang="zh-Hans">在过去两个星期，你有多经常受以下问题困扰？</p><p>请选择频率，不要求你解释原因。可以随时退出；缺题不计算总分。</p></section><div id="phq-live-safety">${draft[8]>0?safety(draft[8]):''}</div><form id="phq-form" class="card"><p class="form-error" role="alert" hidden></p>${items.map((item,i)=>`<fieldset class="phq-item"><legend lang="zh-Hans">${i+1}. ${item}</legend><div class="phq-options">${options.map((o,n)=>`<label><input type="radio" name="phq-${i}" value="${n}" ${draft[i]===n?'checked':''} required><span lang="zh-Hans">${o}</span><small>${n}分</small></label>`).join('')}</div></fieldset>`).join('')}<button type="submit" class="button primary">查看本次结果</button><a class="button secondary" href="#home">退出，不保存</a></form>`;
 }
 const support = ['可以暂缓一件不紧急的事，或留意什么还让你感到一点兴趣。','可以联系愿意倾听的人，或把最近的感受带给专业人员。','可以留意睡眠节奏；持续失眠或过度嗜睡时寻求评估。','可以减少今天的负担；疲劳持续或明显影响生活时考虑就医。','可以留意进食变化；不必靠自责强迫自己调整。','可以尝试把评价换成事实描述，也可以请信任的人陪伴。','可以将事情分小一步，或暂时休息。','若变化明显或加重，可以及时联系专业人员。','请及时联系专业人员进一步评估。'];
 export function phqResult() {
@@ -33,7 +33,7 @@ export function phqResult() {
 }
 export function phqHistory() {
  const history=rows();
- return `<section class="card"><h2>PHQ-9 历史 · 独立版本</h2>${history===null?'<p>历史损坏，未覆盖。请在工具说明页导出备份。</p>':history.length?history.map(r=>`<details><summary>${new Date(r.timestamp).toLocaleDateString('zh-CN')} · ${r.total}/27</summary><p>${esc(r.sourceVersion)}</p><ol>${r.answers.map((a,i)=>`<li>${items[i]}：${options[a]}（${a}分）</li>`).join('')}</ol>${r.answers[8]>0?safety(r.answers[8]):''}<button class="inline-link" data-action="phq-delete" data-id="${esc(r.id)}">删除此测评</button></details>`).join(''):'<p>尚未保存PHQ-9记录。</p>'}<p>旧版自编分数不转换为PHQ-9，不在同一趋势中比较。</p><a href="#intro">按需要再次自查</a></section>`;
+ return `<section class="card"><h2>PHQ-9 历史 · 独立版本</h2>${history===null?'<p>历史损坏，未覆盖。请在工具说明页导出备份。</p>':history.length?history.map(r=>`<details><summary>${new Date(r.timestamp).toLocaleDateString('zh-CN')} · ${r.total}/27</summary><p data-source-version="${esc(r.sourceVersion)}">PHQ-9 · 中文版 · 完整九题</p><ol>${r.answers.map((a,i)=>`<li>${items[i]}：${options[a]}（${a}分）</li>`).join('')}</ol>${r.answers[8]>0?safety(r.answers[8]):''}<button class="inline-link" data-action="phq-delete" data-id="${esc(r.id)}">删除此测评</button></details>`).join(''):'<p>尚未保存PHQ-9记录。</p>'}<p>旧版自编分数不转换为PHQ-9，不在同一趋势中比较。</p><a href="#intro">按需要再次自查</a></section>`;
 }
 export function bindPHQ({navigate,render,periods}) {
  document.addEventListener('change',e=>{if(!e.target.name?.startsWith('phq-'))return; const i=Number(e.target.name.slice(4)); draft[i]=Number(e.target.value); if(i===8){document.querySelector('#phq-live-safety').innerHTML=draft[8]>0?safety(draft[8]):'';if(draft[8]>0)document.querySelector('#phq-live-safety').scrollIntoView({block:'start'});}});

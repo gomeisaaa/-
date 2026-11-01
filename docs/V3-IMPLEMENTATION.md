@@ -138,3 +138,9 @@ V3事件独立带版本：id、timestamp、emotion、mood(-3..3)、title、note�
 文件：src/cycle-trends.js、src/cycle-chart.js、src/events-ui.js、styles.css，静态资源版本cycle-axis1；未改记录结构或用户数据。新增tests/browser-cycle-axis.cjs及v3-cycles.mjs阶段边界、出血重叠、未知/不规律/超期测试。所有新测试通过；原事件、PHQ基础、微行动及完整数据清除/导出/布局回归通过。WebKit/实机仍未测。
 
 截图（合成演示数据）：docs/screenshots/physio-axis-chart.png（图表）、physio-axis-desktop.png、physio-axis-mobile.png。
+
+## PHQ-9简体及简介调整
+
+按用户要求将完整九题、选项及题目引导改为简体中文，清理自查简介和工具说明中的“你提供的图示”等制作过程措辞。简介描述PHQ-9为经过验证的抑郁症状筛查工具，仍明确筛查不是诊断；不对本次字形转换另作临床验证声明。新增保存使用zh-Hans-display-v1版本，旧回答和源版本不改写。计分和第9题处理保持原规则。
+
+测试：v3-foundation基础10组通过；browser-phq-simplified验证简体九题/选项、无制作过程措辞、新版本记录及历史不变通过；browser-phq低总分安全流程回归通过。资源版本phq-hans1。

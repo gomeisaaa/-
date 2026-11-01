@@ -1,5 +1,5 @@
-import { dayKey } from './trends.js?v=cycle-axis1';
-import { daysBetween, estimatePeriod } from './cycle.js?v=cycle-axis1';
+import { dayKey } from './trends.js?v=phq-hans1';
+import { daysBetween, estimatePeriod } from './cycle.js?v=phq-hans1';
 
 export function cycleSeries(entries, periods, now = Date.now()) {
   const starts = periods.slice().sort((a, b) => a.start.localeCompare(b.start));

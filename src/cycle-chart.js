@@ -1,4 +1,4 @@
-import { cyclePhaseLayout } from './cycle-trends.js?v=cycle-axis1';
+import { cyclePhaseLayout } from './cycle-trends.js?v=phq-hans1';
 const escape = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const colors = { follicular: '#edf6e9', ovulatory: '#fff1ca', luteal: '#e9effa' };
 function svgChart(series, layout, axisMax, index) {

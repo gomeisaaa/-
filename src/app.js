@@ -1,16 +1,16 @@
-import {clearDB,allEvents} from './event-db.js?v=cycle-axis1';
-import {getEvents,cycleUnknown} from './events-ui.js?v=cycle-axis1';
-import {hydratePhotos,bindPhotos} from './photos.js?v=cycle-axis1';
-import {memoriesView,bindMemories} from './memories.js?v=cycle-axis1';
-import { eventsView, bindEvents, refreshEvents, openEvent } from './events-ui.js?v=cycle-axis1';
-import { domains, sharedQuestions } from './questions.js?v=cycle-axis1';
-import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern, phqActive, phqReminder } from './phq9-ui.js?v=cycle-axis1';
-import { initializeV3, clearAllVersionedData, exportRawData } from './versioned-data.js?v=cycle-axis1';
-import * as records from './storage.js?v=cycle-axis1';
-import { buildTrend, chartSegments } from './trends.js?v=cycle-axis1';
-import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=cycle-axis1';
+import {clearDB,allEvents} from './event-db.js?v=phq-hans1';
+import {getEvents,cycleUnknown} from './events-ui.js?v=phq-hans1';
+import {hydratePhotos,bindPhotos} from './photos.js?v=phq-hans1';
+import {memoriesView,bindMemories} from './memories.js?v=phq-hans1';
+import { eventsView, bindEvents, refreshEvents, openEvent } from './events-ui.js?v=phq-hans1';
+import { domains, sharedQuestions } from './questions.js?v=phq-hans1';
+import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern, phqActive, phqReminder } from './phq9-ui.js?v=phq-hans1';
+import { initializeV3, clearAllVersionedData, exportRawData } from './versioned-data.js?v=phq-hans1';
+import * as records from './storage.js?v=phq-hans1';
+import { buildTrend, chartSegments } from './trends.js?v=phq-hans1';
+import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=phq-hans1';
 
-import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=cycle-axis1';
+import { readPeriods, savePeriod, removePeriod, clearPeriods, daysBetween, estimatePeriod } from './cycle.js?v=phq-hans1';
 
 const main = document.querySelector('#main');
 const dialog = document.querySelector('#help-dialog');
@@ -161,7 +161,7 @@ function actionView() {
   return `<section class="compact-heading"><span class="eyebrow">A LITTLE ACTION</span><h1>按自己的节奏，做或不做。</h1><p class="muted">想试试时选一件，累了就休息。这里没有必须完成的清单。</p></section>${smallThings()}<p class="small muted">这是日常自我关爱活动，不是专业艺术治疗、音乐治疗或医疗处方。没有立刻开心也不意味着失败。</p>`;
 }
 function introductionCopy() {
-  return `<h2>这里适合谁</h2><p>主要面向 18 岁及以上女性，尤其是在学习、科研、工作、人际或身体变化中感到疲惫、想更了解自己的人。不必先反复质疑自己“是不是真的有问题”，也不用等到明确了原因，才开始照顾自己的感受。</p><h2>在这里，我们可以提供哪些支持？</h2><p><strong>行动与休息：</strong>从简单建议中任选 0–3 项，完成自己选的全部行动后，会有一句小小的鼓励作为彩蛋。你可以随时跳过、换一项或撤销。如果今天没有力气，就选择休息，不需要补做，你的人生仍值得喝彩。什么都不做，也会收到一句支持你的话。</p><p><strong>轻量记录：</strong>选一选此刻的心情；事件、睡眠和文字笔记都可不填。也可以自愿进入更完整的自查，帮助整理感受和寻求支持时想说的话。</p><p><strong>回顾变化：</strong>查看心情趋势、事件和月度记录概况；经期记录与估算帮助安排生活，不解释激素，也不推断情绪的生理原因。</p><h2>这是你的情绪缓冲区，所以要怎么使用，都由你决定</h2><p>不要求每天来，不设连续打卡奖励或断签惩罚。各模块可单独使用，随时退出；休息、跳过或不保存都可以。这里提供日常支持，不保证改善，也不能代替诊断、治疗或紧急救援。PHQ-9用于抑郁症状程度筛查，不是诊断。题目逐字转录自用户提供、署名香港中文大学医院的繁体图示（2026-11-01），未独立核验发布页及授权；总分按五档标准参考，不使用附文三档划分。</p><h2>你的记录，由你掌握</h2><p>无需账号。V3事件与照片保存在当前浏览器的 IndexedDB；PHQ-9完整回答、旧版记录、经期、行动与迁移备份保存在本机 localStorage。不上传、不跨设备同步，且未加密。网站加载时托管服务仍会收到普通页面请求，但应用不会发送记录。共享设备可能暴露记录；清理浏览器数据会丢失记录。未主动保存的PHQ-9回答只在页面内存中，退出或刷新清除；保存后保留完整九题及总分。</p><p>V3事件、PHQ-9及经期记录不再自动淘汰；旧版历史原样保留，原先已被旧版自动淘汰的记录无法恢复。行动仍保留最近90个有记录日期。升级前会保存一份原始旧数据备份，因此单条旧记录删除后可能仍在迁移备份中，需用“清空全部本地数据”一并删除。浏览器空间不足时会明确报错，请先导出文字或删除不需要的照片；不会悄悄覆盖旧事件。</p><h2>需要更多支持时</h2><p>困扰持续、加重或明显影响生活时，可以联系专业人员。无法保持安全、已经受伤或可能马上伤害自己或他人时，请立即联系当地紧急服务。页面顶部始终有即时帮助入口；本站没有实时监测或人工救援。</p>`;
+  return `<h2>这里适合谁</h2><p>主要面向 18 岁及以上女性，尤其是在学习、科研、工作、人际或身体变化中感到疲惫、想更了解自己的人。不必先反复质疑自己“是不是真的有问题”，也不用等到明确了原因，才开始照顾自己的感受。</p><h2>在这里，我们可以提供哪些支持？</h2><p><strong>行动与休息：</strong>从简单建议中任选 0–3 项，完成自己选的全部行动后，会有一句小小的鼓励作为彩蛋。你可以随时跳过、换一项或撤销。如果今天没有力气，就选择休息，不需要补做，你的人生仍值得喝彩。什么都不做，也会收到一句支持你的话。</p><p><strong>轻量记录：</strong>选一选此刻的心情；事件、睡眠和文字笔记都可不填。也可以自愿进入更完整的自查，帮助整理感受和寻求支持时想说的话。</p><p><strong>回顾变化：</strong>查看心情趋势、事件和月度记录概况；经期记录与估算帮助安排生活，不解释激素，也不推断情绪的生理原因。</p><h2>这是你的情绪缓冲区，所以要怎么使用，都由你决定</h2><p>不要求每天来，不设连续打卡奖励或断签惩罚。各模块可单独使用，随时退出；休息、跳过或不保存都可以。这里提供日常支持，不保证改善，也不能代替诊断、治疗或紧急救援。PHQ-9 是一种经过验证的抑郁症状筛查工具，帮助你回顾过去两周的状态。结果用于自我了解与寻求支持，不等于诊断。</p><h2>你的记录，由你掌握</h2><p>无需账号。V3事件与照片保存在当前浏览器的 IndexedDB；PHQ-9完整回答、旧版记录、经期、行动与迁移备份保存在本机 localStorage。不上传、不跨设备同步，且未加密。网站加载时托管服务仍会收到普通页面请求，但应用不会发送记录。共享设备可能暴露记录；清理浏览器数据会丢失记录。未主动保存的PHQ-9回答只在页面内存中，退出或刷新清除；保存后保留完整九题及总分。</p><p>V3事件、PHQ-9及经期记录不再自动淘汰；旧版历史原样保留，原先已被旧版自动淘汰的记录无法恢复。行动仍保留最近90个有记录日期。升级前会保存一份原始旧数据备份，因此单条旧记录删除后可能仍在迁移备份中，需用“清空全部本地数据”一并删除。浏览器空间不足时会明确报错，请先导出文字或删除不需要的照片；不会悄悄覆盖旧事件。</p><h2>需要更多支持时</h2><p>困扰持续、加重或明显影响生活时，可以联系专业人员。无法保持安全、已经受伤或可能马上伤害自己或他人时，请立即联系当地紧急服务。页面顶部始终有即时帮助入口；本站没有实时监测或人工救援。</p>`;
 }
 function welcome() { return `<section class="compact-heading"><span class="eyebrow">欢迎来到她的缓冲区</span><h1>你好，我们是一款面向年轻女性的心理支持小工具</h1><p>你可以在这里记录自己的心情，自查今天的状态，也可以尝试一点小行动，或者只是停一会儿。</p></section><article class="card prose">${introductionCopy()}<button class="button primary" data-action="welcome-done">了解了，按我的节奏开始</button><button class="button text-button" data-action="welcome-done">暂时跳过介绍</button></article>`; }
 function about() {
