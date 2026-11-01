@@ -1,6 +1,6 @@
 // Pure scoring; item text is intentionally NOT supplied until the Chinese source is verified.
 // These thresholds describe symptom screening, never a clinical diagnosis or suicide risk level.
-export const PHQ_SOURCE_STATUS = 'pending-verification';
+export const PHQ_SOURCE_STATUS = 'transcribed-user-supplied-CUHK-infographic';
 export function scorePHQ(answers) {
   if (!Array.isArray(answers) || answers.length !== 9 || !Array.from({length:9},(_,i)=>answers[i]).every(v => Number.isInteger(v) && v >= 0 && v <= 3)) throw new Error('九题均须回答 0–3，缺题时不计算总分。');
   const total = answers.reduce((a,b) => a+b,0);

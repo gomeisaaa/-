@@ -1,5 +1,6 @@
 import { domains, sharedQuestions } from './questions.js?v=support27';
-import { next, submit, progress, buildResult } from './assessment.js?v=support27';
+import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern } from './phq9-ui.js?v=v30';
+import { initializeV3, clearAllVersionedData, exportRawData } from './versioned-data.js?v=v30';
 import * as records from './storage.js?v=support27';
 import { buildTrend, chartSegments } from './trends.js?v=support27';
 import { dailyTasks, updateDailyTask, clearDailyTasks } from './selfcare.js?v=support27';
@@ -54,6 +55,7 @@ const encouragements = [
 ];
 let lastEncouragement = -1;
 function showEncouragement() {
+  if (hasSafetyConcern()) return;
   const next = (lastEncouragement + 1 + Math.floor(Math.random() * (encouragements.length - 1))) % encouragements.length;
   lastEncouragement = next;
   document.querySelector('#encouragement-message').textContent = encouragements[next];
@@ -69,51 +71,17 @@ function smallThings() {
 function home() {
   const latest = historyCache[0];
   return `${reminderEnabled ? '<aside class="card" role="status">想留一笔此刻的心情吗？今天跳过也可以。<button class="inline-link" data-action="journal">记一笔</button><button class="inline-link" data-action="reminder">关闭提醒</button></aside>' : ''}<section class="page-heading"><div><div class="eyebrow">DAILY CHECK-IN</div><h1>今天，给自己一点时间。</h1><p class="muted">不急着判断对错，先听听身体与情绪的声音。</p></div><div class="date-chip"><span class="status-dot"></span>${date(Date.now())}</div></section>
-    <section class="hero"><div class="hero-copy"><span class="hero-label">每一次觉察，都是照顾自己的开始</span><h2>你今天，<br>感觉怎么样？</h2><p>可以选一选心情，或用自查整理此刻状态。<br>如果有需要，我们会再多问一点。</p><button class="button secondary" data-action="journal">快速记心情</button><button class="button primary" data-action="intro">开始今日自查 <span aria-hidden="true">↗</span></button><div class="hero-meta"><span>◷ 约 2–3 分钟</span><span>◇ 按回答补充了解</span></div></div>${leafArt}<span class="hero-caption">慢一点，也没关系。</span></section>
+    <section class="hero"><div class="hero-copy"><span class="hero-label">每一次觉察，都是照顾自己的开始</span><h2>你今天，<br>感觉怎么样？</h2><p>可以选一选心情，或用自查整理此刻状态。<br>PHQ-9回顾过去两周，无两周频率。</p><button class="button secondary" data-action="journal">快速记心情</button><button class="button primary" data-action="intro">开始 PHQ-9 <span aria-hidden="true">↗</span></button><div class="hero-meta"><span>◷ 约 2–3 分钟</span><span>◇ 非诊断性筛查</span></div></div>${leafArt}<span class="hero-caption">慢一点，也没关系。</span></section>
     <div class="module-links"><a href="#action">行动 · 任选的小行动 →</a><a href="#history">记录 · 心情与经期 →</a><a href="#about">工具说明 · 使用与记录 →</a></div>
-    <section class="quick-stats" aria-label="自查概览"><div><span class="stat-icon">☷</span><div><strong>10 个关注领域</strong><p>从情绪、睡眠到安全状况</p></div></div><div><span class="stat-icon">⤳</span><div><strong>按你的回答展开</strong><p>只追问需要进一步了解的部分</p></div></div><div><span class="stat-icon">▣</span><div><strong>由你决定是否保存</strong><p>无账号，不上传自查数据</p></div></div></section>
+    <section class="quick-stats" aria-label="自查概览"><div><span class="stat-icon">☷</span><div><strong>完整九题 · 过去两周</strong><p>不删改第9题，不自动诊断</p></div></div><div><span class="stat-icon">⤳</span><div><strong>每14天温和提醒</strong><p>仍可自愿提前测评</p></div></div><div><span class="stat-icon">▣</span><div><strong>由你决定是否保存</strong><p>无账号，不上传自查数据</p></div></div></section>
     <div class="section-heading"><h2>先了解，再开始</h2><span>让自查成为一种温柔的习惯</span></div>
-    <section class="info-grid"><article class="card"><span class="card-kicker">01 / 自查方式</span><h3>关注今天，也看见变化</h3><p>主问题回顾过去 24 小时。出现变化时，再了解持续时间与生活影响。无需给自己贴标签。</p><div class="tag-row"><span>每日状态</span><span>条件追问</span><span>行动建议</span></div></article><article class="card"><span class="card-kicker">02 / 使用说明</span><h3>记录留在你的设备里</h3><p>记下心情、事件和经期，慢慢看见自己的变化。记录仅保存在当前浏览器，可修改或删除；自查帮助了解状态，不能代替诊断。</p><a class="inline-link" href="#about">查看使用说明 <span aria-hidden="true">→</span></a></article></section>
+    <section class="info-grid"><article class="card"><span class="card-kicker">01 / 自查方式</span><h3>关注今天，也看见变化</h3><p>PHQ-9完整九题回顾过去两周。总分0–27，仅作抑郁症状程度筛查参考。</p><div class="tag-row"><span>每日状态</span><span>两周频率</span><span>行动建议</span></div></article><article class="card"><span class="card-kicker">02 / 使用说明</span><h3>记录留在你的设备里</h3><p>记下心情、事件和经期，慢慢看见自己的变化。记录仅保存在当前浏览器，可修改或删除；自查帮助了解状态，不能代替诊断。</p><a class="inline-link" href="#about">查看使用说明 <span aria-hidden="true">→</span></a></article></section>
     <section class="recent-strip"><div class="recent-icon">◷</div><div><h3>${latest ? '上一次，你为自己留了一份记录' : '留一点空间，给未来的自己'}</h3><p>${latest ? `${date(latest.timestamp)} · ${levelNames[latest.level]}` : '完成后可选择保存摘要，慢慢看见自己的状态变化。'}</p></div><a href="#history" class="inline-link">查看记录 →</a></section>
     ${storageError ? `<p class="storage-warning" role="status">${storageError}</p>` : ''}`;
 }
-function intro() {
-  return `<section class="compact-heading"><div class="eyebrow">BEFORE WE BEGIN</div><h1>先约定，如何照顾自己。</h1><p class="muted">没有标准答案，按你的真实感受回答就好。</p></section>
-    <section class="intro-layout"><div class="card intro-card"><div class="intro-item"><span>01</span><div><h3>从今天的状态开始</h3><p>10 道主问题。安全题先问；报告变化后，每个相关领域追加不同的 1–3 题。通用病程和整体影响各问一次，全部分支最多 27 题。你可以随时退出。</p></div></div><div class="intro-item"><span>02</span><div><h3>不把一次回答当作诊断</h3><p>这是原创筛查草案，不是经过验证的量表。疾病判断还需要专业人员了解完整病程、背景和排除条件。</p></div></div><div class="intro-item"><span>03</span><div><h3>隐私由你掌握</h3><p>答案仅暂存于当前页面内存，刷新即清除。完成后只有你主动保存，摘要才会留在本机；共享设备可能让他人看到记录。</p></div></div><label class="consent"><input id="consent" type="checkbox"><span>我已满 18 岁，理解自查不能代替诊断，并同意开始。<a href="#about">查看完整说明</a></span></label><button id="start-button" class="button primary full" data-action="start" disabled>我准备好了，开始自查 <span aria-hidden="true">→</span></button><button class="button text-button full" data-action="home">暂时不做，返回首页</button></div><aside class="gentle-card"><span class="gentle-icon">♡</span><h3>不需要独自承受。</h3><p>如果你此刻不安全，或可能马上伤害自己或他人，请先寻求即时帮助，不要等待完成自查。</p><button class="inline-link" data-action="help">查看即时求助指引 →</button><div class="divider"></div><p class="small">这里没有实时监测或人工救援。突然严重的身体不适或混乱也应及时就医。</p></aside></section>`;
-}
-function check() {
-  const state = next(session.answers);
-  if (state.type !== 'question') return '';
-  const q = state.question;
-  const p = progress(session.answers);
-  const safety = q.domain === 'safety';
-  const detail = q.kind === 'detail';
-  return `<section class="check-heading"><div><span class="eyebrow">${detail ? 'A CLOSER LOOK' : 'DAILY CHECK-IN'}</span><h1>${safety ? '先确认你的安全。' : detail ? '我们再多了解一点。' : '一步一步，听见自己。'}</h1></div><div class="check-header-actions"><button class="inline-link" data-action="help" aria-label="即时帮助">帮助</button><button class="inline-link muted" data-action="exit" aria-label="退出自查">退出 ×</button></div></section>
-    <section class="assessment-layout"><div><div class="progress-label"><span>${detail ? `主问题已完成 ${p.done}/10 · 已完成追问 ${p.detailDone}/${p.detailTotal}` : `主问题 ${q.number} / 10`}</span><span>${q.name}</span></div><progress max="100" value="${p.percent}" aria-label="当前自查完成进度">${p.percent}%</progress><div class="card question-card ${safety ? 'safety-question' : ''}"><div class="question-label"><span class="pill">${detail ? '进一步了解' : '过去 24 小时'}</span><span class="small muted">${detail ? '只为了解你的情况' : '请选择最接近的一项'}</span></div><h2 id="question-title" tabindex="-1">${q.title}</h2>${q.hint ? `<p class="question-hint">${q.hint}</p>` : ''}
-      <fieldset class="options" aria-labelledby="question-title"><legend class="sr-only">${q.title}</legend>${q.options.map(o => `<label class="option ${selected === o.value ? 'selected' : ''}"><input type="radio" name="answer" value="${o.value}" ${selected === o.value ? 'checked' : ''}><span class="radio-mark"></span><span class="option-copy"><strong>${o.label}</strong>${o.hint ? `<small>${o.hint}</small>` : ''}</span></label>`).join('')}</fieldset>
-      ${safety ? '<div class="safety-note">若你已受伤或可能马上行动，请现在就联系紧急服务。<button class="inline-link" data-action="help">查看求助指引 →</button></div>' : ''}
-      <div class="question-controls"><button class="button text-button" data-action="back" ${!session.steps.length ? 'disabled' : ''}>← 上一题</button><button id="next-button" class="button primary" data-action="next" ${selected === null ? 'disabled' : ''}>${p.done === 9 && !detail ? '继续' : '下一步'} <span aria-hidden="true">→</span></button></div></div><p class="under-question">每个人的体验都不同。如实回答就足够了。</p></div>
-      <aside class="assessment-aside"><div class="aside-heading">这次，我们关注</div><div class="domain-list">${domains.map(d => `<div class="${q.domain === d.id ? 'current' : ''} ${Number.isInteger(session.answers[d.id]) ? 'done' : ''}"><span class="domain-icon">${d.icon}</span><span>${d.name}</span><span class="domain-tick">${Number.isInteger(session.answers[d.id]) ? '✓' : q.domain === d.id ? '·' : ''}</span></div>`).join('')}</div><div class="aside-note">自查不计算疾病总分。<br>结果会结合你的回答，给出下一步建议。</div></aside></section>`;
-}
-function resultView() {
-  const urgent = result.level === 'urgent';
-  const scored = result.scores.filter(d => d.score !== null);
-  const safetyConcern = result.flags.some(f => f.id === 'safety');
-  return `<section class="compact-heading"><span class="eyebrow">${urgent ? 'SAFETY FIRST' : 'YOUR DIMENSION REPORT'}</span><h1>${urgent ? '现在，先照顾你的安全。' : '看见每个维度，再找到下一步。'}</h1><p class="muted">${date(result.timestamp)} · ${time(result.timestamp)} · ${result.complete ? '自查已完成' : '常规自查因安全提示中止'}</p></section>
-    <section class="result-layout"><div><article class="result-card level-${result.level}"><div class="result-symbol">${urgent ? '♡' : '✳'}</div><span class="pill">${urgent ? '即时安全提醒' : '本次维度报告'}</span><h2>当前记录概述</h2><h3>${result.title}</h3><p>${result.description}</p><h3>温和解释</h3><p>这些回答只是此刻体验的一部分，不是疾病标签，也不能说明变化的原因。你不需要凭分数评价自己；即使暂时说不清，也可以获得支持。</p>${urgent ? '<button class="button danger-button" data-action="help">查看即时求助指引 ↗</button>' : ''}</article>
-      <article class="card score-report"><div class="section-heading"><h3>各维度困扰程度</h3><span>0–3 分 · 越高表示困扰越明显</span></div><p class="score-caveat">描述性自查分数，未经临床验证；不是 DSM / ICD 诊断分或疾病概率，各维度不相加。</p>
-        <div class="score-summary"><span><strong>${result.high.length}</strong> 个维度为 2–3 分</span><span><strong>${result.low.length}</strong> 个维度为 0–1 分</span>${scored.length < 9 ? `<span>${9 - scored.length} 个尚未完成</span>` : ''}</div>
-        ${result.high.length ? `<p class="dimension-overview">较高维度：${result.high.map(d => `${d.name} ${d.score} 分`).join('、')}。</p>` : ''}
-        ${result.low.length ? `<p class="dimension-overview">较低维度：${result.low.map(d => `${d.name} ${d.score} 分`).join('、')}。低分不等于没有问题。</p>` : ''}
-        <div class="dimension-grid">${result.scores.map(d => `<section class="dimension-card score-${d.score === null ? 'pending' : d.score}"><div class="dimension-heading"><h4>${d.name}</h4><span class="dimension-value">${d.score === null ? '未完成' : `${d.score}<small> / 3</small>`}</span></div><div class="score-scale" aria-hidden="true">${[1, 2, 3].map(n => `<span class="${d.score !== null && n <= d.score ? 'filled' : ''}"></span>`).join('')}</div><div class="dimension-label">${d.label}</div><p>${d.reason}</p>${d.basis && d.basis.today > 0 ? `<div class="score-basis">今日 ${d.basis.today} · 补充 ${d.basis.pattern}${d.basis.impact !== null ? ` · 冲动 ${d.basis.impact}` : ''}</div>` : ''}</section>`).join('')}</div>
-        <details class="scoring-rule"><summary>分数如何计算？</summary><p>0＝未报告明显困扰，1＝轻微，2＝明显，3＝强烈。完成追问的维度取“今日表现与该维度补充信息”的最高等级；恐慌和激活的冲动后果纳入对应维度。睡眠类型、症状数量及持续天数不加分。整体生活影响单独报告，不加到每个维度。主问题为 0 时不追问，显示主问题的 0 分；追问未完成则不评分。安全题单独处理。这是产品的描述性规则，尚未经验证，不能代替临床评估。</p></details></article>
-      ${result.context && result.context.impact !== null ? `<article class="card context-report"><h3>整体生活影响 · 单独报告</h3><p>${sharedQuestions[1].options[result.context.impact].label}；最困扰变化的病程：${sharedQuestions[0].options[result.context.duration].label}。不把整体影响归因于每个维度。</p></article>` : ''}
-      <article class="card ${safetyConcern ? 'safety-report' : ''}"><h3>安全状况 · 独立确认</h3><p class="safety-status">${result.safety.status}</p><p>${result.safety.note}</p>${safetyConcern ? '<button class="inline-link" data-action="help">查看即时求助指引 →</button>' : ''}</article>
-      <article class="card"><h3>${urgent ? '现在优先获得安全支持' : '可选下一步'}</h3>${urgent ? '' : '<p>可以选择一个建议，也可以不接受建议，先休息。明显影响生活或持续加重时，请考虑专业支持。</p><a class="button secondary" href="#action">看看行动或休息支持</a>'}<ol class="care-list">${result.actions.map(a => `<li>${a}</li>`).join('')}</ol></article>
-      ${result.advice.length ? `<article class="card"><h3>按维度选择改善思路</h3><p class="small muted">选一个最需要照顾的部分开始；这些方法不是处方，也不保证改善。</p><div class="advice-list">${result.advice.map(a => `<section class="advice-item"><span class="pill">${a.name} · ${a.score} 分</span><h4>${a.title}</h4><ul>${a.ideas.map(idea => `<li>${idea}</li>`).join('')}</ul></section>`).join('')}</div></article>` : ''}
-      ${result.medical ? `<article class="card medical-card"><span class="pill">严重或持续情况</span><h3>${result.medical.title}</h3><p>${result.medical.description}</p><h4>关于药物治疗</h4><p>${result.medical.medication}</p>${urgent ? '<button class="button danger-button" data-action="help">查看即时帮助 ↗</button>' : ''}</article>` : ''}
-    </div><aside><div class="card save-card"><span class="save-icon">▣</span><h3>留一份记录给自己</h3><p>仅保存日期、维度分数与状态摘要，不保存具体答案。最多保留 90 条，可随时删除。</p><button class="button ${saved ? 'secondary' : 'primary'} full" data-action="save" ${saved ? 'disabled' : ''}>${saved ? '已保存在本机 ✓' : '保存本次摘要'}</button><a class="button text-button full" href="#history">查看状态记录 →</a><div class="divider"></div><p class="small muted">默认不保存，也不会上传。本站无法通过记录联系或救援你。</p></div><div class="result-footnote"><strong>分数描述困扰，不用于诊断</strong><p>高分不等于确诊，低分不排除问题。持续时间、生活影响与身体状况仍需结合了解；严重情况应就医评估。</p></div><button class="button secondary full" data-action="home">返回首页</button></aside></section>`;
-}
+function intro() { return phqIntro(); }
+function check() { return phqCheck(); }
+function resultView() { return phqResult(); }
 function trendChart(trend, kind) {
   const mood = kind === 'mood';
   const min = mood ? -3 : 0, max = 3;
@@ -148,7 +116,7 @@ function monthlySummary() {
 function historyView() {
   const trend = buildTrend(journalCache, trendRange);
   const visibleJournal = showAllJournal ? journalCache : journalCache.slice(0, 7);
-  return `<section class="page-heading"><div><span class="eyebrow">YOUR MOMENTS</span><h1>慢慢看见自己的变化。</h1><p class="muted">把心情、精力与发生的事，放在同一段时间里了解。</p></div><div class="history-actions"><button class="button primary" data-action="journal">＋ 记一笔心情</button>${historyCache.length || journalCache.length || storageError || journalError || document.documentElement.dataset.hasPeriods === 'true' ? '<button class="button outline-button small" data-action="clear">清空本机记录</button>' : ''}</div></section>
+  return `${phqHistory()}<section class="page-heading"><div><span class="eyebrow">YOUR MOMENTS</span><h1>慢慢看见自己的变化。</h1><p class="muted">把心情、精力与发生的事，放在同一段时间里了解。</p></div><div class="history-actions"><button class="button primary" data-action="journal">＋ 记一笔心情</button>${historyCache.length || journalCache.length || storageError || journalError || document.documentElement.dataset.hasPeriods === 'true' ? '<button class="button outline-button small" data-action="clear">清空本机记录</button>' : ''}</div></section>
     <div class="privacy-strip">▣ 仅保存在当前浏览器 · 自查摘要与心情日志各保留最多 90 条 · 不自动上传或同步</div>
     <div class="record-tabs" role="tablist" aria-label="记录类别">${[['mood','心情与事件'],['cycle','经期记录'],['summary','自查摘要']].map(([id,label])=>`<button role="tab" id="tab-${id}" aria-controls="panel-${id}" aria-selected="${recordTab===id}" tabindex="${recordTab===id?0:-1}" data-action="record-tab" data-tab="${id}">${label}</button>`).join('')}</div>
     <section id="panel-mood" class="record-pane" role="tabpanel" aria-labelledby="tab-mood" ${recordTab==='mood'?'':'hidden'}>
@@ -157,7 +125,7 @@ function historyView() {
     ${journalError ? `<div class="card warning"><p>${journalError}</p></div>` : journalCache.length ? `<div class="journal-list">${visibleJournal.map(journalCard).join('')}</div>${journalCache.length > 7 ? `<button class="button text-button full" data-action="toggle-journal">${showAllJournal ? '收起较早的日志 ↑' : `查看全部 ${journalCache.length} 条日志 ↓`}</button>` : ''}` : `<div class="card journal-empty"><span>❧</span><div><h3>留下一笔，更容易看见变化。</h3><p>记录此刻心情、睡眠或一件影响你的事，不必先完成问卷。</p></div><button class="inline-link" data-action="journal">开始记录 →</button></div>`}
     </section><section id="panel-cycle" class="record-pane" role="tabpanel" aria-labelledby="tab-cycle" ${recordTab==='cycle'?'':'hidden'}>${cyclePanel()}</section>
     <section id="panel-summary" class="record-pane" role="tabpanel" aria-labelledby="tab-summary" ${recordTab==='summary'?'':'hidden'}>
-    <div class="section-heading history-section-heading"><h2>自查维度摘要 <span class="count-pill">${historyCache.length}</span></h2><a href="#intro" class="inline-link">做一次自查 →</a></div>
+    <div class="section-heading history-section-heading"><h2>旧版自查记录 <span class="count-pill">${historyCache.length}</span></h2><a href="#intro" class="inline-link">做一次自查 →</a></div>
     ${storageError ? `<div class="card warning" role="alert"><h3>暂时无法读取本机摘要</h3><p>${storageError}</p></div>` : historyCache.length ? `<div class="history-list">${historyCache.map(r => `<article class="history-card"><div class="history-date"><strong>${date(r.timestamp)}</strong><span>${time(r.timestamp)} · ${r.complete ? '完整自查' : '安全分流'}</span></div><div class="history-content"><span class="level-label level-${r.level}">${levelNames[r.level]}</span><p>${r.domains.length ? r.domains.map(escape).join(' · ') : '此次未报告上述领域的明显变化'}</p><div class="history-scores">${r.scores ? `<span>规则 v${r.scoreVersion || 1}</span>` + r.scores.map(d => `<span>${domains.find(x => x.id === d.id).name} ${d.score === null ? '未完成' : d.score + '分'}</span>`).join('') : '<span>旧版摘要：未记录维度分数</span>'}</div></div><button class="icon-button delete-record" data-action="delete" data-id="${escape(r.id)}" aria-label="删除 ${escape(date(r.timestamp))} ${escape(time(r.timestamp))} 的记录">×</button></article>`).join('')}</div>` : '<div class="card journal-empty"><div><h3>尚未保存自查摘要</h3><p>完成自查后可主动保存维度分数，也可以只体验、不保存。</p></div></div>'}
     </section><p class="history-note">分值与事件只反映自述，不能证明因果或诊断疾病。共享设备可能让他人看到笔记；本地存储未加密，清理浏览器数据或更换设备会丢失记录。</p>`;
 }
@@ -196,7 +164,7 @@ function actionView() {
   return `<section class="compact-heading"><span class="eyebrow">A LITTLE ACTION</span><h1>按自己的节奏，做或不做。</h1><p class="muted">想试试时选一件，累了就休息。这里没有必须完成的清单。</p></section>${smallThings()}<p class="small muted">这是日常自我关爱活动，不是专业艺术治疗、音乐治疗或医疗处方。没有立刻开心也不意味着失败。</p>`;
 }
 function introductionCopy() {
-  return `<h2>这里适合谁</h2><p>主要面向 18 岁及以上女性，尤其是在学习、科研、工作、人际或身体变化中感到疲惫、想更了解自己的人。不必先反复质疑自己“是不是真的有问题”，也不用等到明确了原因，才开始照顾自己的感受。</p><h2>在这里，我们可以提供哪些支持？</h2><p><strong>行动与休息：</strong>从简单建议中任选 0–3 项，完成自己选的全部行动后，会有一句小小的鼓励作为彩蛋。你可以随时跳过、换一项或撤销。如果今天没有力气，就选择休息，不需要补做，你的人生仍值得喝彩。什么都不做，也会收到一句支持你的话。</p><p><strong>轻量记录：</strong>选一选此刻的心情；事件、睡眠和文字笔记都可不填。也可以自愿进入更完整的自查，帮助整理感受和寻求支持时想说的话。</p><p><strong>回顾变化：</strong>查看心情趋势、事件和月度记录概况；经期记录与估算帮助安排生活，不解释激素，也不推断情绪的生理原因。</p><h2>这是你的情绪缓冲区，所以要怎么使用，都由你决定</h2><p>不要求每天来，不设连续打卡奖励或断签惩罚。各模块可单独使用，随时退出；休息、跳过或不保存都可以。这里提供日常支持，不保证改善，也不能代替诊断、治疗或紧急救援。自查是未经临床验证的原创问题集。</p><h2>你的记录，由你掌握</h2><p>无需账号。心情、经期、行动与主动保存的自查摘要仅存在当前浏览器的 localStorage，不上传、不跨设备同步，且未加密。网站加载时托管服务仍会收到普通页面请求，但应用不会发送记录。共享设备可能暴露记录；清理浏览器数据会丢失记录。自查答案只在页面内存中，退出或刷新清除。</p><p>心情日志与自查摘要各保留最近 90 条，经期最多 48 条，行动保留最近 90 个有记录的日期。记录页可删除单条或清空敏感记录；行动页可清除行动记录。</p><h2>需要更多支持时</h2><p>困扰持续、加重或明显影响生活时，可以联系专业人员。无法保持安全、已经受伤或可能马上伤害自己或他人时，请立即联系当地紧急服务。页面顶部始终有即时帮助入口；本站没有实时监测或人工救援。</p>`;
+  return `<h2>这里适合谁</h2><p>主要面向 18 岁及以上女性，尤其是在学习、科研、工作、人际或身体变化中感到疲惫、想更了解自己的人。不必先反复质疑自己“是不是真的有问题”，也不用等到明确了原因，才开始照顾自己的感受。</p><h2>在这里，我们可以提供哪些支持？</h2><p><strong>行动与休息：</strong>从简单建议中任选 0–3 项，完成自己选的全部行动后，会有一句小小的鼓励作为彩蛋。你可以随时跳过、换一项或撤销。如果今天没有力气，就选择休息，不需要补做，你的人生仍值得喝彩。什么都不做，也会收到一句支持你的话。</p><p><strong>轻量记录：</strong>选一选此刻的心情；事件、睡眠和文字笔记都可不填。也可以自愿进入更完整的自查，帮助整理感受和寻求支持时想说的话。</p><p><strong>回顾变化：</strong>查看心情趋势、事件和月度记录概况；经期记录与估算帮助安排生活，不解释激素，也不推断情绪的生理原因。</p><h2>这是你的情绪缓冲区，所以要怎么使用，都由你决定</h2><p>不要求每天来，不设连续打卡奖励或断签惩罚。各模块可单独使用，随时退出；休息、跳过或不保存都可以。这里提供日常支持，不保证改善，也不能代替诊断、治疗或紧急救援。PHQ-9用于抑郁症状程度筛查，不是诊断。题目逐字转录自用户提供、署名香港中文大学医院的繁体图示（2026-11-01），未独立核验发布页及授权；总分按五档标准参考，不使用附文三档划分。</p><h2>你的记录，由你掌握</h2><p>无需账号。心情、经期、行动与主动保存的自查摘要仅存在当前浏览器的 localStorage，不上传、不跨设备同步，且未加密。网站加载时托管服务仍会收到普通页面请求，但应用不会发送记录。共享设备可能暴露记录；清理浏览器数据会丢失记录。自查答案只在页面内存中，退出或刷新清除。</p><p>心情日志与自查摘要各保留最近 90 条，经期最多 48 条，行动保留最近 90 个有记录的日期。记录页可删除单条或清空敏感记录；行动页可清除行动记录。</p><h2>需要更多支持时</h2><p>困扰持续、加重或明显影响生活时，可以联系专业人员。无法保持安全、已经受伤或可能马上伤害自己或他人时，请立即联系当地紧急服务。页面顶部始终有即时帮助入口；本站没有实时监测或人工救援。</p>`;
 }
 function welcome() { return `<section class="compact-heading"><span class="eyebrow">欢迎来到她的缓冲区</span><h1>你好，我们是一款面向年轻女性的心理支持小工具</h1><p>你可以在这里记录自己的心情，自查今天的状态，也可以尝试一点小行动，或者只是停一会儿。</p></section><article class="card prose">${introductionCopy()}<button class="button primary" data-action="welcome-done">了解了，按我的节奏开始</button><button class="button text-button" data-action="welcome-done">暂时跳过介绍</button></article>`; }
 function about() {
@@ -213,11 +181,7 @@ function render(focus = true) {
   let route = location.hash.slice(1) || 'home';
   if (!welcomeSeen) route = 'welcome';
   if (!['welcome', 'home', 'action', 'intro', 'check', 'result', 'history', 'about'].includes(route)) route = 'home';
-  if (lastRoute === 'check' && route !== 'check' && route !== 'result' && session) {
-    if (!confirm('退出会清除此次尚未完成的回答，确定退出吗？')) { location.hash = 'check'; return; }
-    session = null; selected = null;
-  }
-  if (route === 'check' && !session || route === 'result' && !result) route = 'home';
+  if (lastRoute === 'check' && !['check','result'].includes(route)) resetPHQ();
   document.body.dataset.view = route;
   loadHistory();
   document.querySelectorAll('[data-nav]').forEach(a => {
@@ -231,31 +195,7 @@ function render(focus = true) {
     main.querySelectorAll('.prose h2').forEach((heading, i) => { heading.id = 'about-section-' + i; const b = document.createElement('button'); b.textContent = heading.textContent; b.dataset.action = 'about-section'; b.dataset.target = heading.id; toc.append(b); });
   }
   lastRoute = route;
-  if (focus && route === 'check') {
-    requestAnimationFrame(() => {
-      if (document.body.dataset.view !== 'check') return;
-      const heading = main.querySelector('.check-heading');
-      const stripHeight = document.querySelector('.theme-settings').getBoundingClientRect().height;
-      const top = heading.getBoundingClientRect().top + window.scrollY - stripHeight - 12;
-      window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
-      document.querySelector('#question-title')?.focus({ preventScroll: true });
-    });
-  } else if (focus) { main.focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: 'instant' }); }
-}
-function finish() {
-  result = buildResult(session.answers);
-  // IDs are only local deduplication keys, not authentication credentials.
-  resultId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  saved = false;
-  session = null; selected = null; navigate('result');
-}
-function advance() {
-  if (!session || selected === null) return;
-  const q = next(session.answers).question;
-  session.steps.push({ answers: { ...session.answers }, choice: selected });
-  session.answers = submit(session.answers, q.id, selected); selected = null;
-  if (next(session.answers).type !== 'question') finish();
-  else render();
+  if (focus) { main.focus({preventScroll:true}); window.scrollTo({top:0,behavior:'instant'}); }
 }
 function openJournal(id = null) {
   const form = document.querySelector('#journal-form');
@@ -334,13 +274,7 @@ document.addEventListener('change', event => {
     field.disabled = event.target.value === '无特定事件';
     if (field.disabled) field.value = '0';
   }
-  if (event.target.name === 'answer' && session) {
-    selected = Number(event.target.value);
-    document.querySelectorAll('.option').forEach(el => el.classList.toggle('selected', el.querySelector('input').checked));
-    document.querySelector('#next-button').disabled = false;
-    const id = next(session.answers).question.id;
-    if (id === 'safety' && selected === 3 || id === 'safety_intent' && selected === 2 || id === 'safety_safe' && selected === 2) advance();
-  }
+
 });
 document.addEventListener('click', event => {
   const el = event.target.closest('[data-action]');
@@ -397,29 +331,15 @@ document.addEventListener('click', event => {
       break;
     case 'intro': navigate('intro'); break;
     case 'home': navigate('home'); break;
-    case 'start':
-      if (!document.querySelector('#consent')?.checked) return;
-      session = { answers: {}, steps: [] }; result = null; selected = null; navigate('check'); break;
-    case 'next': advance(); break;
-    case 'back': {
-      const prior = session?.steps.pop();
-      if (prior) { session.answers = prior.answers; selected = prior.choice; render(); }
-      break;
-    }
     case 'exit': navigate('home'); break;
-    case 'save':
-      if (!result || saved) return;
-      try { records.save(localStorage, result, resultId); saved = true; render(false); toast('摘要已保存在本机，可在状态记录中删除。'); }
-      catch { toast('保存失败：本机存储不可用或已有记录损坏。此次结果仍可查看。'); }
-      break;
     case 'delete':
       if (confirm('删除这条本机摘要？删除后无法恢复。')) {
         try { records.remove(localStorage, el.dataset.id); if (el.dataset.id === resultId) saved = false; render(); toast('该条记录已删除。'); } catch { toast('删除失败，请检查浏览器存储权限。'); }
       }
       break;
     case 'clear':
-      if (confirm('清空全部自查摘要、心情事件日志和经期记录？行动记录也会清除，配色不受影响。此操作无法恢复。')) {
-        try { records.clear(localStorage); saved = false; records.clearJournal(localStorage); clearPeriods(localStorage); clearDailyTasks(localStorage); render(); toast('自查摘要、心情日志、经期和行动记录已清空。'); }
+      if (confirm('清空全部自查摘要、PHQ-9、心情事件日志、备份和经期记录？行动记录也会清除，配色不受影响。此操作无法恢复。')) {
+        try { clearAllVersionedData(localStorage); saved = false; resetPHQ(); render(); toast('自查摘要、心情日志、经期和行动记录已清空。'); }
         catch { render(false); toast('未能全部清空，部分记录可能已删除。请检查浏览器存储权限。'); }
       }
       break;
@@ -434,5 +354,6 @@ document.addEventListener('keydown', event => {
   recordTab = ids[event.key==='Home'?0:event.key==='End'?2:(i+(event.key==='ArrowRight'?1:2))%3]; render(false); main.querySelector(`#tab-${recordTab}`).focus({preventScroll:true});
 });
 window.addEventListener('storage', event => { if (event.key === 'her-space-theme-v1') applyTheme(event.newValue); render(false); });
-window.addEventListener('beforeunload', event => { if (session) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if (document.body.dataset.view==='check') { event.preventDefault(); event.returnValue = ''; } });
+bindPHQ({navigate,render,periods:()=>readPeriods(localStorage)});
 render();
