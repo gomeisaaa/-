@@ -7,4 +7,11 @@ export function validEvent(r){return r&&r.version===3&&typeof r.id==='string'&&N
 export async function putEvent(row) { if(!validEvent(row))throw new Error('请检查事件日期、心情和文字长度。');await transaction(['events'],'readwrite',tx=>tx.objectStore('events').put(row)); }
 export async function deleteEvent(id) { await transaction(['events','photos'],'readwrite',tx=>{tx.objectStore('events').delete(id);tx.objectStore('photos').delete(id);}); }
 export async function clearDB() { await transaction(['events','photos','settings'],'readwrite',tx=>{for(const name of ['events','photos','settings'])tx.objectStore(name).clear();}); }
-export async function setting(id,value) {if(arguments.length===2){await transaction(['settings'],'readwrite',tx=>tx.objectStore('settings').put({id,value}));return value;}let value;await transaction(['settings'],'readonly',tx=>{const q=tx.objectStore('settings').get(id);q.onsuccess=()=>value=q.result?.value;});return value;}
+export async function setting(id,value) {if(arguments.length===2){await transaction(['settings'],'readwrite',tx=>tx.objectStore('settings').put({id,value}));return value;}let stored;await transaction(['settings'],'readonly',tx=>{const q=tx.objectStore('settings').get(id);q.onsuccess=()=>stored=q.result?.value;});return stored;}
+export async function getPhoto(id) {let blob=null;await transaction(['photos'],'readonly',tx=>{const q=tx.objectStore('photos').get(id);q.onsuccess=()=>blob=q.result?.blob||null;});return blob;}
+export async function saveEventWithPhoto(row,photoChange=undefined) {
+ if(!validEvent(row))throw new Error('事件格式异常。');
+ if(photoChange instanceof Blob&&navigator.storage?.estimate){const e=await navigator.storage.estimate();if(e.quota&&e.usage+photoChange.size+10000>e.quota)throw new Error('本机空间不足，请先导出或删除不需要的照片；原记录未覆盖。');}
+ await transaction(['events','photos'],'readwrite',tx=>{tx.objectStore('events').put(row);if(photoChange===null)tx.objectStore('photos').delete(row.id);else if(photoChange instanceof Blob)tx.objectStore('photos').put({id:row.id,blob:photoChange});});
+}
+export async function removePhoto(id){await transaction(['photos'],'readwrite',tx=>tx.objectStore('photos').delete(id));}

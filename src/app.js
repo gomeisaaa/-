@@ -1,3 +1,5 @@
+import {hydratePhotos,bindPhotos} from './photos.js?v=v30';
+import {memoriesView,bindMemories} from './memories.js?v=v30';
 import { eventsView, bindEvents, refreshEvents, openEvent } from './events-ui.js?v=v30';
 import { domains, sharedQuestions } from './questions.js?v=support27';
 import { phqIntro, phqCheck, phqResult, phqHistory, bindPHQ, resetPHQ, hasSafetyConcern } from './phq9-ui.js?v=v30';
@@ -190,7 +192,8 @@ function render(focus = true) {
     a.classList.toggle('active', active);
     if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  main.innerHTML = ({ welcome, home, action: actionView, intro, check, result: resultView, history: eventsView, legacy: historyView, memories: eventsView, about }[route])();
+  main.innerHTML = ({ welcome, home, action: actionView, intro, check, result: resultView, history: eventsView, legacy: historyView, memories: memoriesView, about }[route])();
+  hydratePhotos(main);
   if (route === 'about') {
     const toc = main.querySelector('.about-toc');
     main.querySelectorAll('.prose h2').forEach((heading, i) => { heading.id = 'about-section-' + i; const b = document.createElement('button'); b.textContent = heading.textContent; b.dataset.action = 'about-section'; b.dataset.target = heading.id; toc.append(b); });
@@ -357,5 +360,7 @@ document.addEventListener('keydown', event => {
 window.addEventListener('storage', event => { if (event.key === 'her-space-theme-v1') applyTheme(event.newValue); render(false); });
 window.addEventListener('beforeunload', event => { if (document.body.dataset.view==='check') { event.preventDefault(); event.returnValue = ''; } });
 bindPHQ({navigate,render,periods:()=>readPeriods(localStorage)});
+bindPhotos(render);
+bindMemories(render);
 bindEvents({navigate,render,periods:()=>readPeriods(localStorage),periodsUI:cyclePanel});
 render();
